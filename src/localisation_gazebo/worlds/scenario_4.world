@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="Scenario 1">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>60 30 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>45 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>30 30 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>15 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>0 30 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>30 60 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://reflector_1</uri>
+      <pose>0 60 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://velodyne_hdl32</uri>
+      <pose>15 15 0 0 0 0</pose>
+    </include>
+  </world>
+</sdf>
