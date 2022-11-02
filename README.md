@@ -1,2 +1,2 @@
-# project_lab_el
-Projektlabor elektrische Systene
+# Projektlabor elektronische Systeme
+- Für die Zusammenarbeit
