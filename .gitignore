@@ -45,4 +45,5 @@ Thumbs.db
 ######################
 *.catkin_workspace
 *.workspace
+*.user
 
