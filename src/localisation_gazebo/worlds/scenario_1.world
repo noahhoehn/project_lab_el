@@ -31,9 +31,5 @@
       <uri>model://reflector_1</uri>
       <pose>0 0 0 0 0 0</pose>
     </include>
-    <include>
-      <uri>model://velodyne_hdl32</uri>
-      <pose>20 10 0 0 0 0</pose>
-    </include>
   </world>
 </sdf>
