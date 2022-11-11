@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     sensor_msgs
     gazebo_ros
-    ##velodyne_pointcloud
+    velodyne_pointcloud
     tf2_ros
 )
 
@@ -113,8 +113,13 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES localisation_pkg
-#  CATKIN_DEPENDS other_catkin_pkg
+#  LIBRARIES oversteer_pkg
+  CATKIN_DEPENDS message_runtime
+  DEPENDS
+    gazebo_ros
+  CATKIN_DEPENDS
+  INCLUDE_DIRS
+  LIBRARIES
 #  DEPENDS system_lib
 )
 
@@ -160,6 +165,10 @@ add_executable(move_sim src/move_sim.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+target_link_libraries(move_sim
+   ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
