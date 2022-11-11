@@ -9,23 +9,23 @@
     </include>
     <include>
       <uri>model://reflector_1</uri>
-      <pose>40 20 0 0 0 0</pose>
+      <pose>80 40 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
-      <pose>40 0 0 0 0 0</pose>
+      <pose>70 12.5 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
-      <pose>20 0 0 0 0 0</pose>
+      <pose>30 10 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
-      <pose>0 20 0 0 0 0</pose>
+      <pose>15 35 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>4 17.5 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://velodyne_hdl32</uri>
