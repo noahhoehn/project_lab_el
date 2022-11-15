@@ -16,7 +16,7 @@
   <joint name="footprint" type="fixed" >
    <parent link="base_footprint" />
     <child link="base_link" />
-    <origin xyz="10 10 0.67" rpy="0 0 0" />
+    <origin xyz="0 10 0.67" rpy="0 0 0" />
   </joint>
 
   <link name="base_link" >
@@ -40,7 +40,7 @@
   </link>
 
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="${organize_cloud}" hz="10" samples="440" gpu="${gpu}" max_range="100" min_angle="-${1.5708}" max_angle="${1.5708}">
+  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="${organize_cloud}" hz="10" samples="440" gpu="${gpu}" max_range="100" min_angle="-${M_PI}" max_angle="${M_PI}">
     <origin xyz="0 0 0.4" rpy="0 0 0" />
   </xacro:VLP-16>
 </robot>

@@ -150,6 +150,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/localisation_pkg_node.cpp)
 
 add_executable(move_sim src/move_sim.cpp)
+add_executable(localisation_node src/localisation_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,12 +162,18 @@ add_executable(move_sim src/move_sim.cpp)
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 
 target_link_libraries(move_sim
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(localisation_node
    ${catkin_LIBRARIES}
 )
 

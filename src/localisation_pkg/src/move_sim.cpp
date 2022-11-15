@@ -66,9 +66,13 @@ int main(int argc, char **argv)
 
 void step()
 {
-  //If Endposition noch nicht erreicht
-  sim_pub.publish(lidar); //Publishen Pose Lidar
-  pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
-  lidar.pose = pose_lidar; //Pose aktualisieren
+  if (pose_lidar.position.x <= 40)
+  {
+    sim_pub.publish(lidar); //Publishen Pose Lidar
+    pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
+    lidar.pose = pose_lidar; //Pose aktualisieren
+  }
+
+
   //Else Beenden Simulation
 }
