@@ -6,10 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /TF1/Tree1/world1
-        - /TF1/Tree1/world1/base_footprint1
-        - /TF1/Tree1/world1/base_footprint1/base_link1
-        - /Front1/Autocompute Value Bounds1
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz/Selection
@@ -30,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Left
+    SyncSource: Velodyne
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -67,7 +63,7 @@ Visualization Manager:
           Value: true
         velodyne:
           Value: true
-        world:
+        velodyne_base_link:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -75,30 +71,11 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          base_footprint:
-            base_link:
-              horizon_backbottom_base_link:
-                horizon_backbottom:
-                  {}
-              horizon_backtop_base_link:
-                horizon_backtop:
-                  {}
-              horizon_left_base_link:
-                horizon_left:
-                  {}
-              horizon_right_base_link:
-                horizon_right:
-                  {}
-              velodyne_front_base_link:
-                velodyne_front:
-                  {}
-              velodyne_middle_base_link:
-                velodyne_middle:
-                  {}
-              velodyne_top_base_link:
-                velodyne_top:
-                  {}
+        base_footprint:
+          base_link:
+            velodyne_base_link:
+              velodyne:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -120,76 +97,16 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        horizon_backbottom:
+        velodyne:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        horizon_backbottom_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        horizon_backtop:
+        velodyne_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        horizon_backtop_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        horizon_left:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        horizon_left_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        horizon_right:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        horizon_right_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        velodyne_front:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_front_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_middle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_middle_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_top:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_top_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -252,7 +169,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 9.765037536621094
+      Distance: 48.38577651977539
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -267,10 +184,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4053982198238373
+      Pitch: 0.18039824068546295
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 2.693617343902588
+      Yaw: 2.8486087322235107
     Saved: ~
 Window Geometry:
   Displays:
