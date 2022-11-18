@@ -6,6 +6,8 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
+//#include "msg/test_pcl.h"
+#include <sensor_msgs/PointCloud.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
@@ -23,7 +25,8 @@
 
 tf::TransformListener *listener;
 
-std::vector <geometry_msgs::Point32> velodyne;
+std::vector <sensor_msgs::PointCloud> velodyne;
+//std::vector <float> intensity;
 
 //localisation_pkg::test_msg TestMsg;
 
