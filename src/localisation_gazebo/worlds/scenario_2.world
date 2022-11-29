@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <world name="Scenario 1">
+  <world name="Scenario 2">
     <include>
       <uri>model://ground_plane</uri>
     </include>

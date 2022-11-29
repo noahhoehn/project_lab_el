@@ -11,10 +11,21 @@ void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   velodyne = points.points;
 }
 
+
+
 void step()
 {
    velodyne = transform_points(velodyne,"velodyne");
 }
+
+
+//sensor_msgs::PointCloud2 filter_cloud (const sensor_msgs::PointCloud2ConstPtr& msg)
+//{
+//  pcl::PassThrough<pcl::PointCloud2> pass;
+//  pass.setInputCloud (msg);
+//  pass.setFilterFieldName ("intensity");
+//  pass.setFilterLimits (0.0, 100);
+//}
 
 /**
  * @brief transform_points
@@ -57,11 +68,14 @@ std::vector <geometry_msgs::Point32>transform_points(std::vector <geometry_msgs:
   return output;
 }
 
+
+
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "localisation_node");
   ros::NodeHandle nh;
-  ros::Subscriber sub = nh.subscribe("/velodyne", 1, LidarCallback);
+  ros::Subscriber sub = nh.subscribe("/velodyne_points", 1, LidarCallback);
 
   listener = new tf::TransformListener;
 

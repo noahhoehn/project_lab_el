@@ -3,7 +3,7 @@
   <model name="reflector_1">
     <static>true</static>
     <link name="link">
-      <pose>0 0 2 0 0 0</pose>
+      <pose>0 0 2.5 0 0 0</pose>
       <collision name="collision">
         <laser_retro>200</laser_retro>
         <geometry>

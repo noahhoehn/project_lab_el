@@ -27,8 +27,8 @@ int main(int argc, char **argv)
   v_ms = v/3.6F;
   x = v_ms/f;
 
-
   ros::init(argc, argv, "move_sim");
+
   ros::NodeHandle nh;
 
   sim_pub = nh.advertise<gazebo_msgs::ModelState>("/gazebo/set_model_state", 1);
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
   twist_lidar.angular.y = 0.0;
   twist_lidar.angular.z = 0.0;
 
-  lidar.model_name = "example";
+  lidar.model_name = "lidar_robot";
   lidar.pose = pose_lidar;
   lidar.twist = twist_lidar;
 
