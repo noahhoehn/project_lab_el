@@ -74,7 +74,7 @@ void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 
 void step()
 {
-   velodyne = transform_points(velodyne,"velodyne");
+   //velodyne = transform_points(velodyne,"velodyne");
 
 }
 

@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     pcl_ros
     roscpp
     sensor_msgs
+    std_msgs
     gazebo_ros
     velodyne_pointcloud
     message_generation
@@ -62,7 +63,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   test_msg.msg
+   test_pcl.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -83,6 +84,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
  generate_messages(
    DEPENDENCIES
    sensor_msgs
+   std_msgs
 )
 
 ################################################
@@ -117,11 +119,9 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES oversteer_pkg
-  CATKIN_DEPENDS message_runtime
-  DEPENDS
-    gazebo_ros
-  CATKIN_DEPENDS
-  INCLUDE_DIRS
+  CATKIN_DEPENDS roscpp  message_runtime
+  DEPENDS gazebo_ros
+  INCLUDE_DIRS include
   LIBRARIES
 #  DEPENDS system_lib
 )
@@ -154,6 +154,7 @@ include_directories(
 
 add_executable(move_sim src/move_sim.cpp)
 add_executable(localisation_node src/localisation_node.cpp)
+add_executable(new_localisation_node src/new_localisation_node.cpp)
 add_executable(test_pointcloud src/test_pointcloud.cpp)
 
 ## Rename C++ executable without prefix
@@ -167,6 +168,7 @@ add_executable(test_pointcloud src/test_pointcloud.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(new_localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_pointcloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -178,6 +180,10 @@ target_link_libraries(move_sim
 )
 
 target_link_libraries(localisation_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(new_localisation_node
    ${catkin_LIBRARIES}
 )
 

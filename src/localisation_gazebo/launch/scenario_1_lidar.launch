@@ -36,6 +36,9 @@
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
 
+  <!-- Start localisation node -->
+  <node pkg="localisation_pkg" name="localisation" type="new_localisation_node" output="screen" required="true"/>
+
 
   <arg name="rviz" default="true"/>
   <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find localisation_gazebo)/rviz/scenario_1.rviz" />
