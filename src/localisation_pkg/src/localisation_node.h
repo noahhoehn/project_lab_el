@@ -4,12 +4,14 @@
 #pragma once
 
 #include "ros/ros.h"
+#include <stdio.h>
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <pcl/point_cloud.h>
+#include <pcl_ros/point_cloud.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
@@ -24,7 +26,16 @@
 
 tf::TransformListener *listener;
 
+ros::Publisher pub;
+
+ros::Publisher pub2;
+
+ros::Publisher pub3;
+
 std::vector <geometry_msgs::Point32> velodyne;
+
+std::vector <geometry_msgs::Point32> points_filtered;
+
 
 //localisation_pkg::test_msg TestMsg;
 
