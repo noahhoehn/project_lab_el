@@ -19,6 +19,7 @@
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/PointCloud.h>
 #include "localisation_pkg/test_pcl.h"
+#include "localisationfunctions.h"
 #include "math.h"
 
 /**
@@ -27,12 +28,15 @@
 class LocalisationNode
 {
 public:
+    using localisationType = LocalisationFunctions;
+    using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
+
     LocalisationNode(const float samplingTimeArg):
         samplingTime(samplingTimeArg)
     {
         velodynePointsSub = node.subscribe("/velodyne_points", 1, &LocalisationNode::LidarCallback, this);
 
-        filteredPointsPub = node.advertise<sensor_msgs::PointCloud>("/filt_points", 1);
+        filteredPointsPub = node.advertise<PointCloud>("/filt_points", 1);
 
         unfiltPointsPub = node.advertise<sensor_msgs::PointCloud>("/unfilt_points", 1);
 
@@ -43,6 +47,7 @@ public:
     {
 
         unfiltPointsPub.publish(pointcloud_1);
+ //       filteredPointsPub.publish(pcl_1);
         intensityPub.publish(intensityArray);
     }
 
@@ -55,11 +60,15 @@ private:
     const float samplingTime;
     localisation_pkg::test_pcl intensityArray;
     sensor_msgs::PointCloud pointcloud_1;
+ //   PointCloud::Ptr pcl_1 (new PointCloud);
+    localisationType localisation;
 
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     {
         sensor_msgs::convertPointCloud2ToPointCloud(*msg, pointcloud_1);
+        PointCloud tempCloud = localisation.filterPcl(msg);
+
         intensityArray.intensity = pointcloud_1.channels[0].values;
     }
 

@@ -119,7 +119,12 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES oversteer_pkg
-  CATKIN_DEPENDS roscpp  message_runtime
+  CATKIN_DEPENDS
+  roscpp
+  message_runtime
+  pcl_ros
+  pcl_conversions
+  sensor_msgs
   DEPENDS gazebo_ros
   INCLUDE_DIRS include
   LIBRARIES

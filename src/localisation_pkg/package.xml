@@ -61,7 +61,10 @@
   <build_depend>gazebo_ros</build_depend>
 
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
+  <exec_depend>pcl_conversions</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>velodyne_pointcloud</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
