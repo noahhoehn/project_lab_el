@@ -35,17 +35,33 @@ class LocalisationFunctions
 public:
     LocalisationFunctions(){}
 
-    sensor_msgs::PointCloud2 filterPcl(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
+    sensor_msgs::PointCloud2 filterPointcloud(const sensor_msgs::PointCloud2 cloud_msg)
     {
-        pcl::PCLPointCloud2* cloud2 = new pcl::PCLPointCloud2;
+        // Create pointer on new PCL PointCloud2
+        pcl::PCLPointCloud2 *cloud2 = new pcl::PCLPointCloud2;
         pcl::PCLPointCloud2ConstPtr cloudPtr(cloud2);
+        //Create new PCL Pointcloud2
         pcl::PCLPointCloud2 cloud_filtered;
+        //Write Cloud Message (sensor_msgs/PointCloud2) to cloud2
+        pcl_conversions::toPCL(cloud_msg, *cloud2);
 
-        pcl_conversions::toPCL(*cloud_msg, *cloud2);
+        //Create Passthrough filter for PCL PointCloud2
+        pcl::PassThrough<pcl::PCLPointCloud2> filter;
 
-        for (int i=0; i<cloud2->)
+        //Set Filter Parameters (Input Cloud, Filter Name, Upper and lower filter limit)
+        filter.setInputCloud(cloudPtr);
+        filter.setFilterFieldName("intensity");
+        filter.setFilterLimits(150.0, 250.0);
+        // Apply filter -> cloud_filtered is the filtered PCL PointCloud2
+        filter.filter(cloud_filtered);
 
-        return temp_cloud;
+        // Create sensor_msgs/PointCloud2
+        sensor_msgs::PointCloud2 cloudy_filt;
+        // Convert PCL PointCloud2 to sensor_msgs/PointCloud2
+        pcl_conversions::moveFromPCL(cloud_filtered, cloudy_filt);
+
+        //Return filtered sensor_msgs/PointCloud2
+        return cloudy_filt;
     }
 
 private:

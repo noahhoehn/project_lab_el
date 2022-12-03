@@ -4,6 +4,10 @@
 #include "std_msgs/Float32.h"
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/impl/instantiate.hpp>
+#include <pcl/point_types.h>
+#include <pcl/filters/impl/passthrough.hpp>
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <pcl/point_cloud.h>
 #include <pcl_ros/point_cloud.h>
@@ -36,40 +40,37 @@ public:
     {
         velodynePointsSub = node.subscribe("/velodyne_points", 1, &LocalisationNode::LidarCallback, this);
 
-        filteredPointsPub = node.advertise<PointCloud>("/filt_points", 1);
+        filtered2PointsPub = node.advertise<sensor_msgs::PointCloud2>("/filt_points", 1);
 
-        unfiltPointsPub = node.advertise<sensor_msgs::PointCloud>("/unfilt_points", 1);
+        filtered1PointsPub = node.advertise<sensor_msgs::PointCloud>("/filt_pointcloud1", 1);
 
         intensityPub = node.advertise<localisation_pkg::test_pcl>("/intensity", 1);
     }
 
     void step()
     {
-
-        unfiltPointsPub.publish(pointcloud_1);
- //       filteredPointsPub.publish(pcl_1);
-        intensityPub.publish(intensityArray);
+        filtered2PointsPub.publish(pointcloud_2);
+        filtered1PointsPub.publish(pointcloud_1);
     }
 
 private:
     ros::NodeHandle node { "~" }; /**< The ROS node handle. */
     ros::Subscriber velodynePointsSub;
-    ros::Publisher filteredPointsPub;
-    ros::Publisher unfiltPointsPub;
+    ros::Publisher filtered2PointsPub;
+    ros::Publisher filtered1PointsPub;
     ros::Publisher intensityPub;
     const float samplingTime;
     localisation_pkg::test_pcl intensityArray;
     sensor_msgs::PointCloud pointcloud_1;
+    sensor_msgs::PointCloud2 pointcloud_2;
  //   PointCloud::Ptr pcl_1 (new PointCloud);
     localisationType localisation;
 
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     {
-        sensor_msgs::convertPointCloud2ToPointCloud(*msg, pointcloud_1);
-        PointCloud tempCloud = localisation.filterPcl(msg);
-
-        intensityArray.intensity = pointcloud_1.channels[0].values;
+        pointcloud_2 = localisation.filterPointcloud(*msg);
+        sensor_msgs::convertPointCloud2ToPointCloud(pointcloud_2, pointcloud_1);
     }
 
 };
