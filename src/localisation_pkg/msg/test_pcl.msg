@@ -1,2 +1,1 @@
-Header header
-float32[] intensity
+geometry_msgs/Point32[] points

@@ -18,6 +18,7 @@
 #include <pcl/filters/passthrough.h>
 #include <velodyne_pointcloud/point_types.h>
 #include <vector>
+#include <numeric>
 #include <pcl_ros/transforms.h>
 #include <tf/transform_listener.h>
 #include <tf2_ros/transform_listener.h>
@@ -35,34 +36,130 @@ class LocalisationFunctions
 public:
     LocalisationFunctions(){}
 
-    sensor_msgs::PointCloud2 filterPointcloud(const sensor_msgs::PointCloud2 cloud_msg)
+    sensor_msgs::PointCloud2 filterPointCloud(const sensor_msgs::PointCloud2 msgCloud2)
     {
         // Create pointer on new PCL PointCloud2
-        pcl::PCLPointCloud2 *cloud2 = new pcl::PCLPointCloud2;
-        pcl::PCLPointCloud2ConstPtr cloudPtr(cloud2);
+        pcl::PCLPointCloud2 *pclCloud2 = new pcl::PCLPointCloud2;
+        pcl::PCLPointCloud2ConstPtr pclCloud2Ptr(pclCloud2);
         //Create new PCL Pointcloud2
-        pcl::PCLPointCloud2 cloud_filtered;
-        //Write Cloud Message (sensor_msgs/PointCloud2) to cloud2
-        pcl_conversions::toPCL(cloud_msg, *cloud2);
+        pcl::PCLPointCloud2 pclCloud2Filtered;
+        //Convert Cloud Message (sensor_msgs/PointCloud2) to PCLCloud2
+        pcl_conversions::toPCL(msgCloud2, *pclCloud2);
 
         //Create Passthrough filter for PCL PointCloud2
         pcl::PassThrough<pcl::PCLPointCloud2> filter;
 
         //Set Filter Parameters (Input Cloud, Filter Name, Upper and lower filter limit)
-        filter.setInputCloud(cloudPtr);
+        filter.setInputCloud(pclCloud2Ptr);
         filter.setFilterFieldName("intensity");
         filter.setFilterLimits(150.0, 250.0);
         // Apply filter -> cloud_filtered is the filtered PCL PointCloud2
-        filter.filter(cloud_filtered);
+        filter.filter(pclCloud2Filtered);
 
         // Create sensor_msgs/PointCloud2
-        sensor_msgs::PointCloud2 cloudy_filt;
+        sensor_msgs::PointCloud2 msgCloud2Filtered;
         // Convert PCL PointCloud2 to sensor_msgs/PointCloud2
-        pcl_conversions::moveFromPCL(cloud_filtered, cloudy_filt);
+        pcl_conversions::moveFromPCL(pclCloud2Filtered, msgCloud2Filtered);
 
         //Return filtered sensor_msgs/PointCloud2
-        return cloudy_filt;
+        return msgCloud2Filtered;
     }
+
+    std::vector<geometry_msgs::Point32> convertPcl2toVector(const sensor_msgs::PointCloud2 msgCloud2)
+    {
+      //create vector to store points with XYZ-values
+      std::vector<geometry_msgs::Point32> points;
+      //convert PointCloud2 to PointCloud to access points
+      sensor_msgs::PointCloud msgCloud;
+      sensor_msgs::convertPointCloud2ToPointCloud(msgCloud2,msgCloud);
+      //write points from PointCloud data to vector
+      points = msgCloud.points;
+      return points;
+    }
+
+
+    std::vector<geometry_msgs::Point32> clusterPointCloud(const std::vector<geometry_msgs::Point32> inputPoints)
+    {
+      std::vector<geometry_msgs::Point32> inputCopy = inputPoints;
+      std::set<int> ignoreIndices;
+      std::vector<geometry_msgs::Point32> clusterCentroids;
+      std::vector<std::vector<geometry_msgs::Point32>> clusterList;
+      std::vector<geometry_msgs::Point32> tempNearPoints;
+
+
+      for (unsigned int i = 0; i < inputCopy.size(); i++)
+      {
+        if (ignoreIndices.find(i) == ignoreIndices.end())
+        {
+          for (unsigned int j = 0; j < inputCopy.size(); j++)
+          {
+            if (i != j && ignoreIndices.find(j) == ignoreIndices.end())
+            {
+              float distance = calcDistance(inputCopy.at(i), inputCopy.at(j));
+              if (distance < 1.0F)
+              {
+                tempNearPoints.push_back(inputCopy.at(j));
+                ignoreIndices.insert(j);
+              }
+            }
+           }
+
+          if (tempNearPoints.size()>1)
+          {
+            tempNearPoints.push_back(inputCopy.at(i));
+            ignoreIndices.insert(i);
+            clusterList.push_back(tempNearPoints);
+            clusterCentroids.push_back(calcCentroid(tempNearPoints));
+          }
+        }
+        tempNearPoints.clear();
+      }
+
+      return clusterCentroids;
+    }
+
+
+
+    float calcDistance (geometry_msgs::Point32 pointA, geometry_msgs::Point32 pointB)
+    {
+      float distance = std::sqrt(std::pow(pointA.x - pointB.x,2) + std::pow(pointA.y - pointB.y,2) + std::pow(pointA.z - pointB.z,2));
+      return distance;
+    }
+
+
+    geometry_msgs::Point32 calcCentroid (std::vector<geometry_msgs::Point32> inputPoints)
+    {
+      std::vector<float> collectX;
+      std::vector<float> collectY;
+      std::vector<float> collectZ;
+      float averageX = 0.0F;
+      float averageY = 0.0F;
+      float averageZ = 0.0F;
+
+      for (unsigned int k = 0; k < inputPoints.size(); k++)
+      {
+        collectX.push_back(inputPoints.at(k).x);
+        collectY.push_back(inputPoints.at(k).y);
+        collectZ.push_back(inputPoints.at(k).z);
+      }
+
+      auto const vectorSize = static_cast<float>(inputPoints.size());
+
+      averageX = std::accumulate(collectX.begin(), collectX.end(), 0.0F)/vectorSize;
+      averageY = std::accumulate(collectY.begin(), collectY.end(), 0.0F)/vectorSize;
+      averageZ = std::accumulate(collectZ.begin(), collectZ.end(), 0.0F)/vectorSize;
+
+      geometry_msgs::Point32 averagePoint;
+
+      averagePoint.x = averageX;
+      averagePoint.y = averageY;
+      averagePoint.z = averageZ;
+
+      return averagePoint;
+    }
+
+
+
 
 private:
 };

@@ -37,7 +37,7 @@
   </node>
 
   <!-- Start localisation node -->
-  <node pkg="localisation_pkg" name="localisation" type="new_localisation_node" output="screen" required="true"/>
+  <node pkg="localisation_pkg" name="localisation" type="localisation_node" output="screen" required="true"/>
 
 
   <arg name="rviz" default="true"/>

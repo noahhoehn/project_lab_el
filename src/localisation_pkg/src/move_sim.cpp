@@ -13,7 +13,7 @@ geometry_msgs::Twist twist_lidar;
 
 std_msgs::Float32 msg;
 
-float v = 10;
+float v = 2;
 float f = 100;
 float x;
 float v_ms;

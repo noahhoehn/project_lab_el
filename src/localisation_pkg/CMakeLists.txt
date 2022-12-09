@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
     gazebo_ros
     velodyne_pointcloud
     message_generation
+    geometry_msgs
     tf2_ros
 )
 
@@ -23,10 +24,11 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(gazebo REQUIRED)
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS})
-#add_message_files(
-#  FILES
-#  test_pcl.msg
-#)
+##add_message_files(
+# FILES
+#test_pcl.msg
+##)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -85,6 +87,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
    DEPENDENCIES
    sensor_msgs
    std_msgs
+   geometry_msgs
 )
 
 ################################################
@@ -124,7 +127,9 @@ catkin_package(
   message_runtime
   pcl_ros
   pcl_conversions
+  std_msgs
   sensor_msgs
+  geometry_msgs
   DEPENDS gazebo_ros
   INCLUDE_DIRS include
   LIBRARIES
@@ -159,8 +164,6 @@ include_directories(
 
 add_executable(move_sim src/move_sim.cpp)
 add_executable(localisation_node src/localisation_node.cpp)
-add_executable(new_localisation_node src/new_localisation_node.cpp)
-add_executable(test_pointcloud src/test_pointcloud.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -173,8 +176,7 @@ add_executable(test_pointcloud src/test_pointcloud.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(new_localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_pointcloud ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
@@ -185,14 +187,6 @@ target_link_libraries(move_sim
 )
 
 target_link_libraries(localisation_node
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(new_localisation_node
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(test_pointcloud
    ${catkin_LIBRARIES}
 )
 
