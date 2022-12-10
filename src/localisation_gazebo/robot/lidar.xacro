@@ -41,7 +41,7 @@
 
 
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="${organize_cloud}" hz="10" samples="500" gpu="${gpu}" max_range="100" min_angle="-${M_PI}" max_angle="${M_PI}">
+  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="${organize_cloud}" hz="10" samples="1000" gpu="${gpu}" max_range="100" min_angle="-${M_PI}" max_angle="${M_PI}">
     <origin xyz="0 0 1.25" rpy="0 0 0" />
   </xacro:VLP-16>
 </robot>

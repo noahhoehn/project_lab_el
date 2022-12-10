@@ -22,7 +22,7 @@ void step();
 
 int main(int argc, char **argv)
 {
-  ROS_INFO("Simulation Starten");
+  ROS_INFO("Start LIDAR-Movement");
 
   v_ms = v/3.6F;
   x = v_ms/f;
@@ -71,6 +71,10 @@ void step()
     sim_pub.publish(lidar); //Publishen Pose Lidar
     pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
     lidar.pose = pose_lidar; //Pose aktualisieren
+  }else
+  {
+    ROS_INFO("Endpoint reached. LIDAR-Movement stopped");
+    ros::shutdown();
   }
 
 

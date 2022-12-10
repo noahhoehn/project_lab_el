@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
+#include <gazebo/gazebo.hh>
+#include <gazebo_msgs/ModelStates.h>
+#include <geometry_msgs/Pose.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl/filters/passthrough.h>
@@ -23,8 +26,10 @@
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/PointCloud.h>
 #include "localisation_pkg/test_pcl.h"
+#include "localisation_pkg/trianglesList.h"
 #include "localisationfunctions.h"
 #include "math.h"
+#include "geometry_msgs/Polygon.h"
 
 /**
  * @brief The LocalisationNode class
@@ -40,46 +45,67 @@ public:
     {
         velodynePointsSub = node.subscribe("/velodyne_points", 1, &LocalisationNode::LidarCallback, this);
 
-        //filtered2PointsPub = node.advertise<sensor_msgs::PointCloud2>("/filt_points", 1);
+        reflectorPosesSub = node.subscribe("/gazebo/model_states", 1, &LocalisationNode::ModelStatesCallback, this);
 
         dataPclPub = node.advertise<sensor_msgs::PointCloud>("/pclFiltered", 1);
-
-        //intensityPub = node.advertise<localisation_pkg::test_pcl>("/intensity", 1);
 
         clusterPointsPub = node.advertise<localisation_pkg::test_pcl>("/clusteredPoints",1);
 
         pointsPub = node.advertise<localisation_pkg::test_pcl>("/justPoints",1);
+
+        trianglesPub = node.advertise<localisation_pkg::trianglesList>("/trianglesList",1);
+
+        mapReflectorPointsPub = node.advertise<localisation_pkg::test_pcl>("/mapReflectorPointsPub",1);
+
+        mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);
 
 
     }
 
     void step()
     {
-        //filtered2PointsPub.publish(dataPcl2);
+
         dataPclPub.publish(dataPcl);
 
         clusterPointsPub.publish(msgClusteredPoints);
 
         pointsPub.publish(msgPoints);
+
+        trianglesPub.publish(msgTriangles);
+
+        mapReflectorPointsPub.publish(msgMapReflectorPointsList);
+
+        mapTrianglesPub.publish(msgMapTriangles);
+
     }
 
 private:
     ros::NodeHandle node { "~" }; /**< The ROS node handle. */
+    const float samplingTime = 0.0F;
+
     ros::Subscriber velodynePointsSub;
-    //ros::Publisher filtered2PointsPub;
+    ros::Subscriber reflectorPosesSub;
+
     ros::Publisher dataPclPub;
-    //ros::Publisher intensityPub;
     ros::Publisher clusterPointsPub;
     ros::Publisher pointsPub;
-    const float samplingTime = 0.0F;
-    localisation_pkg::test_pcl intensityArray;
+    ros::Publisher trianglesPub;
+    ros::Publisher mapTrianglesPub;
+    ros::Publisher mapReflectorPointsPub;
+
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
     std::vector<geometry_msgs::Point32> points;
     std::vector<geometry_msgs::Point32> clusteredPoints;
     localisation_pkg::test_pcl msgClusteredPoints;
     localisation_pkg::test_pcl msgPoints;
+    localisation_pkg::trianglesList msgTriangles;
     localisationType localisation;
+    std::vector<geometry_msgs::Polygon> trianglesList;
+    std::vector<geometry_msgs::Polygon> mapTrianglesList;
+    localisation_pkg::trianglesList msgMapTriangles;
+    std::vector<geometry_msgs::Point32> mapReflectorPointsList;
+    localisation_pkg::test_pcl msgMapReflectorPointsList;
 
 
 
@@ -89,9 +115,25 @@ private:
         sensor_msgs::convertPointCloud2ToPointCloud(dataPcl2, dataPcl);
         points = localisation.convertPcl2toVector(dataPcl2);
         clusteredPoints = localisation.clusterPointCloud(points);
+        trianglesList = localisation.findTriangles(clusteredPoints);
         msgClusteredPoints.points = clusteredPoints;
         msgPoints.points = points;
+        msgTriangles.triangles = trianglesList;
     }
+
+    void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
+    {
+
+      mapReflectorPointsList = localisation.getReflectorPositions(*msg);
+      msgMapReflectorPointsList.points = mapReflectorPointsList;
+
+      mapTrianglesList = localisation.findTriangles(mapReflectorPointsList);
+      msgMapTriangles.triangles = mapTrianglesList;
+
+      //reflectorPosesSub.shutdown();
+
+    }
+
 };
 
 int main(int argc, char **argv)

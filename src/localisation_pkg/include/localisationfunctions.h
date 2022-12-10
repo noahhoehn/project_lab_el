@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
+#include <gazebo/gazebo.hh>
+#include <gazebo_msgs/ModelStates.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/PointCloud.h>
@@ -30,6 +34,7 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include "math.h"
+#include <geometry_msgs/Polygon.h>
 
 class LocalisationFunctions
 {
@@ -157,6 +162,78 @@ public:
 
       return averagePoint;
     }
+
+
+
+    std::vector<geometry_msgs::Polygon> findTriangles (std::vector<geometry_msgs::Point32> pointsList)
+    {
+      for (unsigned int i=0; i<pointsList.size(); i++)
+      {
+        pointsList.at(i).z = 0.0F;
+      }
+
+      std::vector<geometry_msgs::Polygon> triangleList;
+
+      for (unsigned int i=0; i<pointsList.size(); i++)
+      {
+        for (unsigned int j=i+1; j<pointsList.size(); j++)
+        {
+          for (unsigned int k=j+1; k<pointsList.size(); k++)
+          {
+            if(isTriangle(pointsList.at(i), pointsList.at(j), pointsList.at(k)))
+            {
+              geometry_msgs::Polygon tempTriangle;
+              tempTriangle.points.push_back(pointsList.at(i));
+              tempTriangle.points.push_back(pointsList.at(j));
+              tempTriangle.points.push_back(pointsList.at(k));
+              triangleList.push_back(tempTriangle);
+            }
+          }
+        }
+      }
+      return triangleList;
+    }
+
+
+    bool isTriangle (geometry_msgs::Point32 PointA, geometry_msgs::Point32 PointB, geometry_msgs::Point32 PointC)
+    {
+      float distanceA = calcDistance(PointA, PointB);
+      float distanceB = calcDistance(PointB, PointC);
+      float distanceC = calcDistance(PointC, PointA);
+
+      if (distanceA < distanceB + distanceC && distanceB < distanceA + distanceC && distanceC < distanceB + distanceA)
+      {
+        return true;
+      }
+
+      return false;
+    }
+
+    std::vector<geometry_msgs::Point32> getReflectorPositions (gazebo_msgs::ModelStates inputModelStates)
+    {
+      std::vector<geometry_msgs::Pose> poseList;
+      for (unsigned int i = 0; i<inputModelStates.name.size(); i++)
+      {
+        if (inputModelStates.name.at(i) == "reflector") poseList.push_back(inputModelStates.pose.at(i));
+      }
+      std::vector<geometry_msgs::Point32> pointList;
+
+      for (unsigned int i=0; i<poseList.size(); i++)
+      {
+        float PoseX = poseList.at(i).position.x;
+        float PoseY = poseList.at(i).position.y;
+
+        geometry_msgs::Point32 tempPoint;
+        tempPoint.x = PoseX;
+        tempPoint.y = PoseY;
+        tempPoint.z = 0.0F;
+
+        pointList.push_back(tempPoint);
+      }
+
+      return pointList;
+    }
+
 
 
 

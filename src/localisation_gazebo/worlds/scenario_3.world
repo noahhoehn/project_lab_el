@@ -9,26 +9,32 @@
     </include>
     <include>
       <uri>model://reflector_1</uri>
+      <name>reflector</name>
       <pose>80 40 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
+      <name>reflector</name>
       <pose>70 12.5 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
+      <name>reflector</name>
       <pose>30 10 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
+      <name>reflector</name>
       <pose>15 35 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
+      <name>reflector</name>
       <pose>4 17.5 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://velodyne_hdl32</uri>
+      <name>reflector</name>
       <pose>20 10 0 0 0 0</pose>
     </include>
   </world>
