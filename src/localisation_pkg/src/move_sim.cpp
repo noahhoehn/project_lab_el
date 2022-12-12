@@ -13,7 +13,7 @@ geometry_msgs::Twist twist_lidar;
 
 std_msgs::Float32 msg;
 
-float v = 2;
+float v = 10;
 float f = 100;
 float x;
 float v_ms;
@@ -29,16 +29,25 @@ int main(int argc, char **argv)
 
   ros::init(argc, argv, "move_sim");
 
-  ros::NodeHandle nh;
+  double posX = 0.0;
+  double posY = 0.0;
+
+  ros::NodeHandle nh("~");
+
+  nh.getParam("posX", posX);
+  nh.getParam("posY", posY);
+
+  ROS_INFO("Got Position Parameters");
+
 
   sim_pub = nh.advertise<gazebo_msgs::ModelState>("/gazebo/set_model_state", 1);
 
   pose_lidar.orientation.x = 0.0;
   pose_lidar.orientation.y = 0.0;
-  pose_lidar.orientation.z = 0.0;
-  pose_lidar.orientation.w = 0.0;
-  pose_lidar.position.x = 0.0;
-  pose_lidar.position.y = 0.0;
+  pose_lidar.orientation.z = 1.0;
+  pose_lidar.orientation.w = 0.5;
+  pose_lidar.position.x = posX;
+  pose_lidar.position.y = posY;
   pose_lidar.position.z = 0.0;
 
   twist_lidar.linear.x = 0.0;
@@ -66,10 +75,10 @@ int main(int argc, char **argv)
 
 void step()
 {
-  if (pose_lidar.position.x <= 40)
+  if (pose_lidar.position.x <= 200)
   {
     sim_pub.publish(lidar); //Publishen Pose Lidar
-    pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
+    //pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
     lidar.pose = pose_lidar; //Pose aktualisieren
   }else
   {

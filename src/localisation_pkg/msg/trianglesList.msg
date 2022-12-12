@@ -1,1 +1,1 @@
-geometry_msgs/Polygon[] triangles
+localisation_pkg/triangle[] triangles

@@ -1,0 +1,5 @@
+localisation_pkg/triangle triangleA
+localisation_pkg/triangle triangleB
+float32 transformX
+float32 transformY
+float32 transformW

@@ -25,11 +25,17 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/PointCloud.h>
-#include "localisation_pkg/test_pcl.h"
+#include "localisation_pkg/pointList.h"
+#include "localisation_pkg/reflector.h"
+#include "localisation_pkg/reflectorList.h"
+#include "localisation_pkg/triangle.h"
 #include "localisation_pkg/trianglesList.h"
 #include "localisationfunctions.h"
 #include "math.h"
 #include "geometry_msgs/Polygon.h"
+#include "jsk_recognition_msgs/PolygonArray.h"
+#include "localisation_pkg/trianglePair.h"
+#include "localisation_pkg/trianglePairList.h"
 
 /**
  * @brief The LocalisationNode class
@@ -44,42 +50,34 @@ public:
         samplingTime(samplingTimeArg)
     {
         velodynePointsSub = node.subscribe("/velodyne_points", 1, &LocalisationNode::LidarCallback, this);
-
         reflectorPosesSub = node.subscribe("/gazebo/model_states", 1, &LocalisationNode::ModelStatesCallback, this);
 
         dataPclPub = node.advertise<sensor_msgs::PointCloud>("/pclFiltered", 1);
-
-        clusterPointsPub = node.advertise<localisation_pkg::test_pcl>("/clusteredPoints",1);
-
-        pointsPub = node.advertise<localisation_pkg::test_pcl>("/justPoints",1);
-
-        trianglesPub = node.advertise<localisation_pkg::trianglesList>("/trianglesList",1);
-
-        mapReflectorPointsPub = node.advertise<localisation_pkg::test_pcl>("/mapReflectorPointsPub",1);
-
-        mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);
-
-
+        clusterCentroidsPub = node.advertise<localisation_pkg::pointList>("/clusterCentroids",1);
+        filteredPointsPub = node.advertise<localisation_pkg::pointList>("/filteredPoints",1);
+        mapReflectorListPub = node.advertise<localisation_pkg::reflectorList>("/mapReflectorList",1);
+        mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);   
+        lidarTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarTriangles",1);
+        lidarUsableTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarUsableTriangles",1);
+        trianglePairsPub = node.advertise<localisation_pkg::trianglePairList>("/trianglePairs",1);
     }
 
     void step()
     {
-
         dataPclPub.publish(dataPcl);
-
-        clusterPointsPub.publish(msgClusteredPoints);
-
-        pointsPub.publish(msgPoints);
-
-        trianglesPub.publish(msgTriangles);
-
-        mapReflectorPointsPub.publish(msgMapReflectorPointsList);
-
-        mapTrianglesPub.publish(msgMapTriangles);
-
+        clusterCentroidsPub.publish(clusterCentroids);
+        filteredPointsPub.publish(filteredPoints);
+        mapReflectorListPub.publish(mapReflectorList);
+        mapTrianglesPub.publish(mapTriangles);
+        lidarTrianglesPub.publish(lidarTriangles);
+        lidarUsableTrianglesPub.publish(lidarUsableTriangles);
+        trianglePairsPub.publish(trianglePairs);
     }
 
 private:
+
+    localisationType localisation;
+
     ros::NodeHandle node { "~" }; /**< The ROS node handle. */
     const float samplingTime = 0.0F;
 
@@ -87,48 +85,43 @@ private:
     ros::Subscriber reflectorPosesSub;
 
     ros::Publisher dataPclPub;
-    ros::Publisher clusterPointsPub;
-    ros::Publisher pointsPub;
-    ros::Publisher trianglesPub;
+    ros::Publisher clusterCentroidsPub;
+    ros::Publisher filteredPointsPub;
+    ros::Publisher lidarTrianglesPub;
     ros::Publisher mapTrianglesPub;
-    ros::Publisher mapReflectorPointsPub;
+    ros::Publisher mapReflectorListPub;
+    ros::Publisher lidarUsableTrianglesPub;
+    ros::Publisher trianglePairsPub;
 
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
-    std::vector<geometry_msgs::Point32> points;
-    std::vector<geometry_msgs::Point32> clusteredPoints;
-    localisation_pkg::test_pcl msgClusteredPoints;
-    localisation_pkg::test_pcl msgPoints;
-    localisation_pkg::trianglesList msgTriangles;
-    localisationType localisation;
-    std::vector<geometry_msgs::Polygon> trianglesList;
-    std::vector<geometry_msgs::Polygon> mapTrianglesList;
-    localisation_pkg::trianglesList msgMapTriangles;
-    std::vector<geometry_msgs::Point32> mapReflectorPointsList;
-    localisation_pkg::test_pcl msgMapReflectorPointsList;
-
-
+    localisation_pkg::pointList filteredPoints;
+    localisation_pkg::pointList clusterCentroids;
+    localisation_pkg::reflectorList clusterCentroidsLabeled;
+    localisation_pkg::trianglesList lidarTriangles;
+    localisation_pkg::trianglesList lidarUsableTriangles;
+    localisation_pkg::trianglesList mapTriangles;
+    localisation_pkg::reflectorList mapReflectorList;
+    localisation_pkg::trianglePairList trianglePairs;
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     {
         dataPcl2 = localisation.filterPointCloud(*msg);
         sensor_msgs::convertPointCloud2ToPointCloud(dataPcl2, dataPcl);
-        points = localisation.convertPcl2toVector(dataPcl2);
-        clusteredPoints = localisation.clusterPointCloud(points);
-        trianglesList = localisation.findTriangles(clusteredPoints);
-        msgClusteredPoints.points = clusteredPoints;
-        msgPoints.points = points;
-        msgTriangles.triangles = trianglesList;
+        filteredPoints = localisation.convertPcl2toVector(dataPcl2);
+        clusterCentroids = localisation.clusterPointCloud(filteredPoints);
+        clusterCentroidsLabeled = localisation.labelClusterCentroids(clusterCentroids);
+        lidarTriangles = localisation.findTriangles(clusterCentroidsLabeled);
+        lidarUsableTriangles = localisation.findUsableTriangles(lidarTriangles);
+        trianglePairs = localisation.findTrianglePairs(lidarUsableTriangles, mapTriangles);
     }
 
     void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
     {
 
-      mapReflectorPointsList = localisation.getReflectorPositions(*msg);
-      msgMapReflectorPointsList.points = mapReflectorPointsList;
+      mapReflectorList = localisation.getReflectorPositions(*msg);
+      mapTriangles = localisation.findTriangles(mapReflectorList);
 
-      mapTrianglesList = localisation.findTriangles(mapReflectorPointsList);
-      msgMapTriangles.triangles = mapTrianglesList;
 
       //reflectorPosesSub.shutdown();
 

@@ -35,6 +35,13 @@
 #include <pcl_ros/transforms.h>
 #include "math.h"
 #include <geometry_msgs/Polygon.h>
+#include "localisation_pkg/pointList.h"
+#include "localisation_pkg/reflector.h"
+#include "localisation_pkg/reflectorList.h"
+#include "localisation_pkg/triangle.h"
+#include "localisation_pkg/trianglesList.h"
+#include "localisation_pkg/trianglePair.h"
+#include "localisation_pkg/trianglePairList.h"
 
 class LocalisationFunctions
 {
@@ -70,54 +77,50 @@ public:
         return msgCloud2Filtered;
     }
 
-    std::vector<geometry_msgs::Point32> convertPcl2toVector(const sensor_msgs::PointCloud2 msgCloud2)
+    localisation_pkg::pointList convertPcl2toVector(const sensor_msgs::PointCloud2 msgCloud2)
     {
       //create vector to store points with XYZ-values
-      std::vector<geometry_msgs::Point32> points;
+      localisation_pkg::pointList pointList;
       //convert PointCloud2 to PointCloud to access points
       sensor_msgs::PointCloud msgCloud;
       sensor_msgs::convertPointCloud2ToPointCloud(msgCloud2,msgCloud);
       //write points from PointCloud data to vector
-      points = msgCloud.points;
-      return points;
+      pointList.points = msgCloud.points;
+      return pointList;
     }
 
 
-    std::vector<geometry_msgs::Point32> clusterPointCloud(const std::vector<geometry_msgs::Point32> inputPoints)
+    localisation_pkg::pointList clusterPointCloud(const localisation_pkg::pointList inputPoints)
     {
-      std::vector<geometry_msgs::Point32> inputCopy = inputPoints;
-      std::set<int> ignoreIndices;
-      std::vector<geometry_msgs::Point32> clusterCentroids;
-      std::vector<std::vector<geometry_msgs::Point32>> clusterList;
-      std::vector<geometry_msgs::Point32> tempNearPoints;
+      std::set<unsigned int> ignoreIndices;
+      localisation_pkg::pointList clusterCentroids;
+      localisation_pkg::pointList tempNearPoints;
 
-
-      for (unsigned int i = 0; i < inputCopy.size(); i++)
+      for (unsigned int i = 0; i < inputPoints.points.size(); i++)
       {
         if (ignoreIndices.find(i) == ignoreIndices.end())
         {
-          for (unsigned int j = 0; j < inputCopy.size(); j++)
+          for (unsigned int j = 0; j < inputPoints.points.size(); j++)
           {
             if (i != j && ignoreIndices.find(j) == ignoreIndices.end())
             {
-              float distance = calcDistance(inputCopy.at(i), inputCopy.at(j));
+              float distance = calcDistance(inputPoints.points.at(i), inputPoints.points.at(j));
               if (distance < 1.0F)
               {
-                tempNearPoints.push_back(inputCopy.at(j));
+                tempNearPoints.points.push_back(inputPoints.points.at(j));
                 ignoreIndices.insert(j);
               }
             }
            }
 
-          if (tempNearPoints.size()>1)
+          if (tempNearPoints.points.size()>1)
           {
-            tempNearPoints.push_back(inputCopy.at(i));
+            tempNearPoints.points.push_back(inputPoints.points.at(i));
             ignoreIndices.insert(i);
-            clusterList.push_back(tempNearPoints);
-            clusterCentroids.push_back(calcCentroid(tempNearPoints));
+            clusterCentroids.points.push_back(calcCentroid(tempNearPoints));
           }
         }
-        tempNearPoints.clear();
+        tempNearPoints.points.clear();
       }
 
       return clusterCentroids;
@@ -132,7 +135,7 @@ public:
     }
 
 
-    geometry_msgs::Point32 calcCentroid (std::vector<geometry_msgs::Point32> inputPoints)
+    geometry_msgs::Point32 calcCentroid (localisation_pkg::pointList inputPoints)
     {
       std::vector<float> collectX;
       std::vector<float> collectY;
@@ -141,14 +144,14 @@ public:
       float averageY = 0.0F;
       float averageZ = 0.0F;
 
-      for (unsigned int k = 0; k < inputPoints.size(); k++)
+      for (unsigned int k = 0; k < inputPoints.points.size(); k++)
       {
-        collectX.push_back(inputPoints.at(k).x);
-        collectY.push_back(inputPoints.at(k).y);
-        collectZ.push_back(inputPoints.at(k).z);
+        collectX.push_back(inputPoints.points.at(k).x);
+        collectY.push_back(inputPoints.points.at(k).y);
+        collectZ.push_back(inputPoints.points.at(k).z);
       }
 
-      auto const vectorSize = static_cast<float>(inputPoints.size());
+      auto const vectorSize = static_cast<float>(inputPoints.points.size());
 
       averageX = std::accumulate(collectX.begin(), collectX.end(), 0.0F)/vectorSize;
       averageY = std::accumulate(collectY.begin(), collectY.end(), 0.0F)/vectorSize;
@@ -165,34 +168,37 @@ public:
 
 
 
-    std::vector<geometry_msgs::Polygon> findTriangles (std::vector<geometry_msgs::Point32> pointsList)
+    localisation_pkg::trianglesList findTriangles (localisation_pkg::reflectorList inputReflectors)
     {
-      for (unsigned int i=0; i<pointsList.size(); i++)
+      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
       {
-        pointsList.at(i).z = 0.0F;
+        inputReflectors.reflectors.at(i).position.z = 0.0F;
       }
 
-      std::vector<geometry_msgs::Polygon> triangleList;
+      localisation_pkg::trianglesList triangleList;
 
-      for (unsigned int i=0; i<pointsList.size(); i++)
+      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
       {
-        for (unsigned int j=i+1; j<pointsList.size(); j++)
+        for (unsigned int j=i+1; j<inputReflectors.reflectors.size(); j++)
         {
-          for (unsigned int k=j+1; k<pointsList.size(); k++)
+          for (unsigned int k=j+1; k<inputReflectors.reflectors.size(); k++)
           {
-            if(isTriangle(pointsList.at(i), pointsList.at(j), pointsList.at(k)))
+            if(isTriangle(inputReflectors.reflectors.at(i).position, inputReflectors.reflectors.at(j).position, inputReflectors.reflectors.at(k).position))
             {
-              geometry_msgs::Polygon tempTriangle;
-              tempTriangle.points.push_back(pointsList.at(i));
-              tempTriangle.points.push_back(pointsList.at(j));
-              tempTriangle.points.push_back(pointsList.at(k));
-              triangleList.push_back(tempTriangle);
+              localisation_pkg::triangle tempTriangle;
+              tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(i));
+              tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(j));
+              tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(k));
+              tempTriangle.usable = false;
+              triangleList.triangles.push_back(tempTriangle);
             }
           }
         }
       }
       return triangleList;
     }
+
+
 
 
     bool isTriangle (geometry_msgs::Point32 PointA, geometry_msgs::Point32 PointB, geometry_msgs::Point32 PointC)
@@ -209,32 +215,151 @@ public:
       return false;
     }
 
-    std::vector<geometry_msgs::Point32> getReflectorPositions (gazebo_msgs::ModelStates inputModelStates)
+
+
+
+    localisation_pkg::reflectorList getReflectorPositions (gazebo_msgs::ModelStates inputModelStates)
     {
       std::vector<geometry_msgs::Pose> poseList;
+
       for (unsigned int i = 0; i<inputModelStates.name.size(); i++)
       {
         if (inputModelStates.name.at(i) == "reflector") poseList.push_back(inputModelStates.pose.at(i));
       }
-      std::vector<geometry_msgs::Point32> pointList;
+
+      localisation_pkg::reflectorList reflectorList;
 
       for (unsigned int i=0; i<poseList.size(); i++)
       {
         float PoseX = poseList.at(i).position.x;
         float PoseY = poseList.at(i).position.y;
 
-        geometry_msgs::Point32 tempPoint;
-        tempPoint.x = PoseX;
-        tempPoint.y = PoseY;
-        tempPoint.z = 0.0F;
+        localisation_pkg::reflector tempReflector;
+        tempReflector.position.x = PoseX;
+        tempReflector.position.y = PoseY;
+        tempReflector.position.z = 0.0F;
+        tempReflector.label = i;
 
-        pointList.push_back(tempPoint);
+        reflectorList.reflectors.push_back(tempReflector);
       }
 
-      return pointList;
+      return reflectorList;
+    }
+
+    localisation_pkg::reflectorList labelClusterCentroids (localisation_pkg::pointList inputCentroids)
+    {
+      localisation_pkg::reflectorList labeledClusterCentroids;
+
+      for (unsigned int i=0; i<inputCentroids.points.size(); i++)
+      {
+        localisation_pkg::reflector tempReflector;
+        tempReflector.position = inputCentroids.points.at(i);
+        tempReflector.label = i;
+
+        labeledClusterCentroids.reflectors.push_back(tempReflector);
+      }
+
+      return labeledClusterCentroids;
+    }
+
+    bool compareTriangles (localisation_pkg::triangle triangleA, localisation_pkg::triangle triangleB)
+    {
+      float tolerance = 0.5F;
+
+      float lengthAa = calcDistance(triangleA.reflectors.at(0).position, triangleA.reflectors.at(1).position);
+      float lengthAb = calcDistance(triangleA.reflectors.at(1).position, triangleA.reflectors.at(2).position);
+      float lengthAc = calcDistance(triangleA.reflectors.at(2).position, triangleA.reflectors.at(0).position);
+      std::vector<float> lengthA = {lengthAa, lengthAb, lengthAc};
+
+      float lengthBa = calcDistance(triangleB.reflectors.at(0).position, triangleB.reflectors.at(1).position);
+      float lengthBb = calcDistance(triangleB.reflectors.at(1).position, triangleB.reflectors.at(2).position);
+      float lengthBc = calcDistance(triangleB.reflectors.at(2).position, triangleB.reflectors.at(0).position);
+      std::vector<float> lengthB = {lengthBa, lengthBb, lengthBc};
+
+      sort(lengthA.begin(), lengthA.end());
+      sort(lengthB.begin(), lengthB.end());
+
+      if (abs(lengthA[0]-lengthB[0])<tolerance && abs(lengthA[1]-lengthB[1])<tolerance && abs(lengthA[2]-lengthB[2])<tolerance)
+      {
+        return true;
+      }
+      return false;
     }
 
 
+    localisation_pkg::trianglePairList findTrianglePairs (localisation_pkg::trianglesList mapTriangles, localisation_pkg::trianglesList usableTriangles)
+    {
+      localisation_pkg::trianglePairList trianglePairs;
+
+      for (unsigned int i=0; i<usableTriangles.triangles.size(); i++)
+      {
+        for (unsigned int j=0; j<mapTriangles.triangles.size(); j++)
+        {
+          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j)))
+          {
+            localisation_pkg::trianglePair tempTrianglePair;
+            tempTrianglePair.triangleA = usableTriangles.triangles.at(i);
+            tempTrianglePair.triangleB = mapTriangles.triangles.at(j);
+            trianglePairs.trianglePairs.push_back(tempTrianglePair);
+          }
+        }
+      }
+
+      return trianglePairs;
+    }
+
+
+
+    bool inTriangle (localisation_pkg::triangle triangle)
+    {
+      geometry_msgs::Point32 point;
+      point.x = 0.0F;
+      point.y = 0.0F;
+      point.z = 0.0F;
+
+      float checkSideA, checkSideB, checkSideC;
+      bool cw, ccw;
+
+      //Checken auf welcher Seite von 3 Geraden zwischen Eckpunkten Dreieck liegt (durch Aufspannen Halbebene und Bestimmen Determinante)
+      //https://www.aleph1.info/?call=Puc&permalink=hm1_5_5_Z2
+      checkSideA = checkSide(point, triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
+      checkSideB = checkSide(point, triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
+      checkSideC = checkSide(point, triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
+
+      cw = (checkSideA < 0) || (checkSideB < 0) || (checkSideC < 0); //Punkt liegt links von min. einer Ebene
+      ccw = (checkSideA > 0) || (checkSideB > 0) || (checkSideC > 0);//Punkt liegt rechts von min. einer Ebene
+
+      return !(cw && ccw);  //wenn beide Fälle eintreten kann Punkt nicht in Dreieck liegen
+    }
+
+
+
+    float checkSide (geometry_msgs::Point32 A, geometry_msgs::Point32 B, geometry_msgs::Point32 C)
+    {
+      return (A.x - C.x) * (B.y - C.y) - (B.x - C.x) * (A.y - C.y);
+    }
+
+
+
+
+    localisation_pkg::trianglesList findUsableTriangles (localisation_pkg::trianglesList inputTriangles)
+    {
+
+      localisation_pkg::trianglesList usableTriangles;
+
+      for (unsigned int i=0; i<inputTriangles.triangles.size(); i++)
+      {
+        if (inTriangle(inputTriangles.triangles.at(i)))
+        {
+            localisation_pkg::triangle tempTriangle;
+            tempTriangle = inputTriangles.triangles.at(i);
+            tempTriangle.usable = true;
+            usableTriangles.triangles.push_back(tempTriangle);
+        }
+      }
+
+      return usableTriangles;
+    }
 
 
 

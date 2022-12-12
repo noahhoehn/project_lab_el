@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
     geometry_msgs
     tf2_ros
+    jsk_recognition_msgs
 )
 
 # Depend on system install of Gazebo
@@ -26,7 +27,7 @@ find_package(gazebo REQUIRED)
 include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS})
 ##add_message_files(
 # FILES
-#test_pcl.msg
+#pointList.msg
 ##)
 
 ## System dependencies are found with CMake's conventions
@@ -65,8 +66,13 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   test_pcl.msg
+   pointList.msg
+   reflector.msg
+   reflectorList.msg
+   triangle.msg
    trianglesList.msg
+   trianglePair.msg
+   trianglePairList.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -89,6 +95,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
    sensor_msgs
    std_msgs
    geometry_msgs
+   jsk_recognition_msgs
 )
 
 ################################################
@@ -131,6 +138,7 @@ catkin_package(
   std_msgs
   sensor_msgs
   geometry_msgs
+  jsk_recognition_msgs
   DEPENDS gazebo_ros
   INCLUDE_DIRS include
   LIBRARIES
