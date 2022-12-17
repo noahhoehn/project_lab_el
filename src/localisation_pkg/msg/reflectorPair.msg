@@ -1,0 +1,3 @@
+localisation_pkg/reflector reflectorMap
+localisation_pkg/reflector reflectorLidar
+float32 distance2Lidar

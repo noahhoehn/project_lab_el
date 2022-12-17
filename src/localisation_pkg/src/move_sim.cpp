@@ -13,7 +13,7 @@ geometry_msgs::Twist twist_lidar;
 
 std_msgs::Float32 msg;
 
-float v = 10;
+float v = 8.0F;
 float f = 100;
 float x;
 float v_ms;
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   pose_lidar.orientation.x = 0.0;
   pose_lidar.orientation.y = 0.0;
   pose_lidar.orientation.z = 1.0;
-  pose_lidar.orientation.w = 0.5;
+  pose_lidar.orientation.w = 0.0;
   pose_lidar.position.x = posX;
   pose_lidar.position.y = posY;
   pose_lidar.position.z = 0.0;
@@ -78,7 +78,7 @@ void step()
   if (pose_lidar.position.x <= 200)
   {
     sim_pub.publish(lidar); //Publishen Pose Lidar
-    //pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
+    pose_lidar.position.x += x;//Lidar weiterfahren lassen in x-Richtung
     lidar.pose = pose_lidar; //Pose aktualisieren
   }else
   {

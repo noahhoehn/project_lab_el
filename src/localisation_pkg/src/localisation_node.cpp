@@ -36,6 +36,11 @@
 #include "jsk_recognition_msgs/PolygonArray.h"
 #include "localisation_pkg/trianglePair.h"
 #include "localisation_pkg/trianglePairList.h"
+#include "localisation_pkg/triangleSide.h"
+#include "localisation_pkg/triangleSideList.h"
+#include "localisation_pkg/calcTriangle.h"
+#include "localisation_pkg/calcTriangleList.h"
+#include "localisation_pkg/reflectorPair.h"
 
 /**
  * @brief The LocalisationNode class
@@ -56,10 +61,12 @@ public:
         clusterCentroidsPub = node.advertise<localisation_pkg::pointList>("/clusterCentroids",1);
         filteredPointsPub = node.advertise<localisation_pkg::pointList>("/filteredPoints",1);
         mapReflectorListPub = node.advertise<localisation_pkg::reflectorList>("/mapReflectorList",1);
-        mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);   
+        mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);
         lidarTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarTriangles",1);
         lidarUsableTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarUsableTriangles",1);
         trianglePairsPub = node.advertise<localisation_pkg::trianglePairList>("/trianglePairs",1);
+        calcTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcTriangles",1);
+        calcPosTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcPosTriangles",1);
     }
 
     void step()
@@ -72,6 +79,8 @@ public:
         lidarTrianglesPub.publish(lidarTriangles);
         lidarUsableTrianglesPub.publish(lidarUsableTriangles);
         trianglePairsPub.publish(trianglePairs);
+        calcTrianglesPub.publish(calcTriangles);
+        calcPosTrianglesPub.publish(calcPosTriangles);
     }
 
 private:
@@ -92,6 +101,8 @@ private:
     ros::Publisher mapReflectorListPub;
     ros::Publisher lidarUsableTrianglesPub;
     ros::Publisher trianglePairsPub;
+    ros::Publisher calcTrianglesPub;
+    ros::Publisher calcPosTrianglesPub;
 
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
@@ -103,6 +114,9 @@ private:
     localisation_pkg::trianglesList mapTriangles;
     localisation_pkg::reflectorList mapReflectorList;
     localisation_pkg::trianglePairList trianglePairs;
+    localisation_pkg::calcTriangleList calcTriangles;
+    localisation_pkg::calcTriangleList calcPosTriangles;
+
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     {
@@ -113,7 +127,10 @@ private:
         clusterCentroidsLabeled = localisation.labelClusterCentroids(clusterCentroids);
         lidarTriangles = localisation.findTriangles(clusterCentroidsLabeled);
         lidarUsableTriangles = localisation.findUsableTriangles(lidarTriangles);
-        trianglePairs = localisation.findTrianglePairs(lidarUsableTriangles, mapTriangles);
+        trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles);
+        calcTriangles = localisation.getCalcTriangelsList(trianglePairs);
+        calcPosTriangles = localisation.getPosTriangelsList(calcTriangles);
+
     }
 
     void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
@@ -122,8 +139,7 @@ private:
       mapReflectorList = localisation.getReflectorPositions(*msg);
       mapTriangles = localisation.findTriangles(mapReflectorList);
 
-
-      //reflectorPosesSub.shutdown();
+      reflectorPosesSub.shutdown();
 
     }
 

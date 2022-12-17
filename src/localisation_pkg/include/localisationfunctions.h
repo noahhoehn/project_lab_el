@@ -34,6 +34,7 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include "math.h"
+#include "utility"
 #include <geometry_msgs/Polygon.h>
 #include "localisation_pkg/pointList.h"
 #include "localisation_pkg/reflector.h"
@@ -42,6 +43,11 @@
 #include "localisation_pkg/trianglesList.h"
 #include "localisation_pkg/trianglePair.h"
 #include "localisation_pkg/trianglePairList.h"
+#include "localisation_pkg/triangleSide.h"
+#include "localisation_pkg/triangleSideList.h"
+#include "localisation_pkg/calcTriangle.h"
+#include "localisation_pkg/calcTriangleList.h"
+#include "localisation_pkg/reflectorPair.h"
 
 class LocalisationFunctions
 {
@@ -89,7 +95,6 @@ public:
       return pointList;
     }
 
-
     localisation_pkg::pointList clusterPointCloud(const localisation_pkg::pointList inputPoints)
     {
       std::set<unsigned int> ignoreIndices;
@@ -111,7 +116,7 @@ public:
                 ignoreIndices.insert(j);
               }
             }
-           }
+          }
 
           if (tempNearPoints.points.size()>1)
           {
@@ -120,20 +125,18 @@ public:
             clusterCentroids.points.push_back(calcCentroid(tempNearPoints));
           }
         }
+
         tempNearPoints.points.clear();
       }
 
       return clusterCentroids;
     }
 
-
-
     float calcDistance (geometry_msgs::Point32 pointA, geometry_msgs::Point32 pointB)
     {
       float distance = std::sqrt(std::pow(pointA.x - pointB.x,2) + std::pow(pointA.y - pointB.y,2) + std::pow(pointA.z - pointB.z,2));
       return distance;
     }
-
 
     geometry_msgs::Point32 calcCentroid (localisation_pkg::pointList inputPoints)
     {
@@ -166,8 +169,6 @@ public:
       return averagePoint;
     }
 
-
-
     localisation_pkg::trianglesList findTriangles (localisation_pkg::reflectorList inputReflectors)
     {
       for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
@@ -189,6 +190,7 @@ public:
               tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(i));
               tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(j));
               tempTriangle.reflectors.push_back(inputReflectors.reflectors.at(k));
+              tempTriangle.sideList = (getTriangleSides(tempTriangle));
               tempTriangle.usable = false;
               triangleList.triangles.push_back(tempTriangle);
             }
@@ -197,9 +199,6 @@ public:
       }
       return triangleList;
     }
-
-
-
 
     bool isTriangle (geometry_msgs::Point32 PointA, geometry_msgs::Point32 PointB, geometry_msgs::Point32 PointC)
     {
@@ -214,9 +213,6 @@ public:
 
       return false;
     }
-
-
-
 
     localisation_pkg::reflectorList getReflectorPositions (gazebo_msgs::ModelStates inputModelStates)
     {
@@ -266,24 +262,61 @@ public:
     {
       float tolerance = 0.5F;
 
-      float lengthAa = calcDistance(triangleA.reflectors.at(0).position, triangleA.reflectors.at(1).position);
-      float lengthAb = calcDistance(triangleA.reflectors.at(1).position, triangleA.reflectors.at(2).position);
-      float lengthAc = calcDistance(triangleA.reflectors.at(2).position, triangleA.reflectors.at(0).position);
-      std::vector<float> lengthA = {lengthAa, lengthAb, lengthAc};
-
-      float lengthBa = calcDistance(triangleB.reflectors.at(0).position, triangleB.reflectors.at(1).position);
-      float lengthBb = calcDistance(triangleB.reflectors.at(1).position, triangleB.reflectors.at(2).position);
-      float lengthBc = calcDistance(triangleB.reflectors.at(2).position, triangleB.reflectors.at(0).position);
-      std::vector<float> lengthB = {lengthBa, lengthBb, lengthBc};
-
-      sort(lengthA.begin(), lengthA.end());
-      sort(lengthB.begin(), lengthB.end());
-
-      if (abs(lengthA[0]-lengthB[0])<tolerance && abs(lengthA[1]-lengthB[1])<tolerance && abs(lengthA[2]-lengthB[2])<tolerance)
+      if (abs(triangleA.sideList.sides.at(0).length-triangleB.sideList.sides.at(0).length)<tolerance && abs(triangleA.sideList.sides.at(1).length-triangleB.sideList.sides.at(1).length)<tolerance && abs(triangleA.sideList.sides.at(2).length-triangleB.sideList.sides.at(2).length)<tolerance)
       {
         return true;
       }
       return false;
+    }
+
+
+    localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
+    {
+      //Using Bubble Sort
+      localisation_pkg::triangleSide tempSide;
+
+      for (unsigned int i=0; i<inputList.sides.size(); i++)
+      {
+        for (unsigned int j=0; j<inputList.sides.size(); j++)
+        {
+          if(inputList.sides.at(j).length < inputList.sides.at(i).length)
+          {
+            tempSide = inputList.sides.at(i);
+            inputList.sides.at(i) = inputList.sides.at(j);
+            inputList.sides.at(j) = tempSide;
+          }
+        }
+      }
+
+      return inputList;
+    }
+
+
+    localisation_pkg::triangleSideList getTriangleSides (localisation_pkg::triangle triangle)
+    {
+      localisation_pkg::triangleSide sideA;
+      localisation_pkg::triangleSide sideB;
+      localisation_pkg::triangleSide sideC;
+      localisation_pkg::triangleSideList sideList;
+
+      sideA.length = calcDistance(triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
+      sideA.reflector1 = triangle.reflectors.at(0);
+      sideA.reflector2 = triangle.reflectors.at(1);
+      sideList.sides.push_back(sideA);
+
+      sideB.length = calcDistance(triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
+      sideB.reflector1 = triangle.reflectors.at(1);
+      sideB.reflector2 = triangle.reflectors.at(2);
+      sideList.sides.push_back(sideB);
+
+      sideC.length = calcDistance(triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
+      sideC.reflector1 = triangle.reflectors.at(2);
+      sideC.reflector2 = triangle.reflectors.at(0);
+      sideList.sides.push_back(sideC);
+
+      sideList = sortSideList(sideList);
+
+      return sideList;
     }
 
 
@@ -298,8 +331,8 @@ public:
           if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j)))
           {
             localisation_pkg::trianglePair tempTrianglePair;
-            tempTrianglePair.triangleA = usableTriangles.triangles.at(i);
-            tempTrianglePair.triangleB = mapTriangles.triangles.at(j);
+            tempTrianglePair.triangleLidar = usableTriangles.triangles.at(i);
+            tempTrianglePair.triangleMap = mapTriangles.triangles.at(j);
             trianglePairs.trianglePairs.push_back(tempTrianglePair);
           }
         }
@@ -362,9 +395,163 @@ public:
     }
 
 
+    localisation_pkg::calcTriangleList getCalcTriangelsList (localisation_pkg::trianglePairList trianglePairs)
+    {
+      localisation_pkg::calcTriangleList calcTriangleList;
+
+      for (unsigned int i=0; i<trianglePairs.trianglePairs.size(); i++)
+      {
+        calcTriangleList.calcTriangles.push_back(matchReflectors(trianglePairs.trianglePairs.at(i)));
+      }
+
+      return calcTriangleList;
+    }
+
+
+    localisation_pkg::calcTriangle matchReflectors (localisation_pkg::trianglePair inputPair)
+    {
+      std::vector<std::pair<localisation_pkg::reflectorPair, localisation_pkg::reflectorPair>> possibleReflectorPairs;
+      localisation_pkg::calcTriangle outputPairs;
+
+      geometry_msgs::Point32 lidarKOS;
+      lidarKOS.x = 0.0F;
+      lidarKOS.y = 0.0F;
+      lidarKOS.z = 0.0F;
+
+      for (unsigned int i=0; i<3; i++)
+      {
+        std::pair <localisation_pkg::reflectorPair, localisation_pkg::reflectorPair> tempPairOfPair1;
+        tempPairOfPair1.first.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector1;
+        tempPairOfPair1.first.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector1;
+        tempPairOfPair1.first.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair1.first.reflectorLidar.position);
+        tempPairOfPair1.second.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector2;
+        tempPairOfPair1.second.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector2;
+        tempPairOfPair1.second.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair1.second.reflectorLidar.position);
+
+        possibleReflectorPairs.push_back(tempPairOfPair1);
+
+        std::pair <localisation_pkg::reflectorPair, localisation_pkg::reflectorPair> tempPairOfPair2;
+        tempPairOfPair2.first.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector1;
+        tempPairOfPair2.first.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector2;
+        tempPairOfPair2.first.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair2.first.reflectorLidar.position);
+        tempPairOfPair2.second.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector2;
+        tempPairOfPair2.second.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector1;
+        tempPairOfPair2.second.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair2.second.reflectorLidar.position);
+        possibleReflectorPairs.push_back(tempPairOfPair2);
+      }
+
+
+     for (unsigned int j=0; j<possibleReflectorPairs.size(); j++)
+     {
+       for (unsigned int k=j+1; k<possibleReflectorPairs.size(); k++)
+       {
+         if (compareReflectorPair (possibleReflectorPairs.at(j).first, possibleReflectorPairs.at(k).first) ||
+             compareReflectorPair (possibleReflectorPairs.at(j).second, possibleReflectorPairs.at(k).first)   )
+         {
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(j).first);
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(j).second);
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(k).second);
+             j=4;
+             break;
+         }
+         else if (compareReflectorPair (possibleReflectorPairs.at(j).first, possibleReflectorPairs.at(k).second) ||
+                  compareReflectorPair (possibleReflectorPairs.at(j).second, possibleReflectorPairs.at(k).second)    )
+         {
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(j).first);
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(j).second);
+             outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(k).first);
+             j=4;
+             break;
+         }
+       }
+     }
+
+      return outputPairs;
+    }
+
+
+
+
+    bool compareReflectorPair (localisation_pkg::reflectorPair pairA, localisation_pkg::reflectorPair pairB)
+    {
+      if (pairA.reflectorMap.label == pairB.reflectorMap.label && pairA.reflectorLidar.label == pairB.reflectorLidar.label)
+      {
+        return true;
+      }
+      return false;
+    }
+
+
+    localisation_pkg::calcTriangleList getPosTriangelsList (localisation_pkg::calcTriangleList inputList)
+    {
+      localisation_pkg::calcTriangleList calcTriangleList;
+
+      for (unsigned int i=0; i<inputList.calcTriangles.size(); i++)
+      {
+        calcTriangleList.calcTriangles.push_back(calcLidarPos(inputList.calcTriangles.at(i)));
+      }
+
+      return calcTriangleList;
+    }
+
+
+
+    localisation_pkg::calcTriangle calcLidarPos (localisation_pkg::calcTriangle inputCalcTriangle)
+    {
+      localisation_pkg::calcTriangle outputCalcTriangle;
+      geometry_msgs::Point32 point1 = inputCalcTriangle.reflectorPairs.at(0).reflectorMap.position;
+      geometry_msgs::Point32 point2 = inputCalcTriangle.reflectorPairs.at(1).reflectorMap.position;
+      geometry_msgs::Point32 point3 = inputCalcTriangle.reflectorPairs.at(2).reflectorMap.position;
+      float r1 = inputCalcTriangle.reflectorPairs.at(0).distance2Lidar;
+      float r2 = inputCalcTriangle.reflectorPairs.at(1).distance2Lidar;
+      float r3 = inputCalcTriangle.reflectorPairs.at(2).distance2Lidar;
+      geometry_msgs::Point32 ex;
+      geometry_msgs::Point32 aux;
+      geometry_msgs::Point32 aux2;
+      geometry_msgs::Point32 ey;
+
+
+      float p2p1Dist = calcDistance(point2,point1);
+      ex.x = (point2.x - point1.x)/p2p1Dist;
+      ex.y = (point2.y - point1.y)/p2p1Dist;
+      aux.x = point3.x - point1.x;
+      aux.y = point3.y - point1.y;
+
+      float i = ex.x * aux.x + ex.y * aux.y;
+
+      aux2.x = point3.x - point1.x - i * ex.x;
+      aux2.y = point3.y - point1.y - i * ex.y;
+      ey.x = aux2.x/normVector(aux2);
+      ey.y = aux2.y/normVector(aux2);
+
+      float j = ey.x * aux.x + ey.y * aux.y;
+
+      float xTemp = (pow(r1,2) - pow(r2,2) + pow(p2p1Dist,2))/(2 * p2p1Dist);
+      float yTemp = (pow(r1,2) - pow(r3,2) + pow(i,2) + pow(j,2))/(2*j) - i*xTemp/j;
+
+      float x = point1.x + xTemp*ex.x + yTemp*ey.x;
+      float y = point1.y + xTemp*ex.y + yTemp*ey.y;
+
+      outputCalcTriangle = inputCalcTriangle;
+      outputCalcTriangle.lidarPos.x = x;
+      outputCalcTriangle.lidarPos.y = y;
+
+      return outputCalcTriangle;
+
+    }
+
+
+    float normVector (geometry_msgs::Point32 point) // get the norm of a vector
+    {
+        return sqrt(pow(point.x,2)+pow(point.y,2));
+    }
+
 
 private:
+
 };
+
+
 
 
 #endif // LOCALISATIONFUNCTIONS_H
