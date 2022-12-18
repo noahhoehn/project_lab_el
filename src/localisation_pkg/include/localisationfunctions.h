@@ -35,7 +35,7 @@
 #include <pcl_ros/transforms.h>
 #include "math.h"
 #include "utility"
-#include <geometry_msgs/Polygon.h>
+//created messages
 #include "localisation_pkg/pointList.h"
 #include "localisation_pkg/reflector.h"
 #include "localisation_pkg/reflectorList.h"
@@ -48,12 +48,22 @@
 #include "localisation_pkg/calcTriangle.h"
 #include "localisation_pkg/calcTriangleList.h"
 #include "localisation_pkg/reflectorPair.h"
+#include "localisation_pkg/calcPosition.h"
 
+/**
+ * @brief The LocalisationFunctions class
+ */
 class LocalisationFunctions
 {
 public:
     LocalisationFunctions(){}
 
+    //-----------------------------filter and conversion--------------------------------//
+    /**
+     * @brief filterPointCloud filters pointCloud data by intensity
+     * @param msgCloud2
+     * @return msgCloud2Filtered
+     */
     sensor_msgs::PointCloud2 filterPointCloud(const sensor_msgs::PointCloud2 msgCloud2)
     {
         // Create pointer on new PCL PointCloud2
@@ -83,6 +93,11 @@ public:
         return msgCloud2Filtered;
     }
 
+    /**
+     * @brief convertPcl2toVector converts pointCloud data to vector of 3D-Points
+     * @param msgCloud2
+     * @return pointList
+     */
     localisation_pkg::pointList convertPcl2toVector(const sensor_msgs::PointCloud2 msgCloud2)
     {
       //create vector to store points with XYZ-values
@@ -95,6 +110,13 @@ public:
       return pointList;
     }
 
+
+    //----------------------------------clustering-------------------------------------//
+    /**
+     * @brief clusterPointCloud clusters pointCloud data (as vector of 3D-points) and calculates centroids of clusters
+     * @param inputPoints
+     * @return clusterCentroids
+     */
     localisation_pkg::pointList clusterPointCloud(const localisation_pkg::pointList inputPoints)
     {
       std::set<unsigned int> ignoreIndices;
@@ -132,12 +154,23 @@ public:
       return clusterCentroids;
     }
 
+    /**
+     * @brief calcDistance calculates distance between 2 3D-Points
+     * @param pointA
+     * @param pointB
+     * @return distance
+     */
     float calcDistance (geometry_msgs::Point32 pointA, geometry_msgs::Point32 pointB)
     {
       float distance = std::sqrt(std::pow(pointA.x - pointB.x,2) + std::pow(pointA.y - pointB.y,2) + std::pow(pointA.z - pointB.z,2));
       return distance;
     }
 
+    /**
+     * @brief calcCentroid calculates centroid of list of points
+     * @param inputPoints
+     * @return averagePoint
+     */
     geometry_msgs::Point32 calcCentroid (localisation_pkg::pointList inputPoints)
     {
       std::vector<float> collectX;
@@ -169,6 +202,35 @@ public:
       return averagePoint;
     }
 
+    /**
+     * @brief labelClusterCentroids labels input points with increasing numbers
+     * @param inputCentroids
+     * @return labeledClusterCentroids
+     */
+    localisation_pkg::reflectorList labelClusterCentroids (localisation_pkg::pointList inputCentroids)
+    {
+      localisation_pkg::reflectorList labeledClusterCentroids;
+
+      for (unsigned int i=0; i<inputCentroids.points.size(); i++)
+      {
+        localisation_pkg::reflector tempReflector;
+        tempReflector.position = inputCentroids.points.at(i);
+        tempReflector.label = i;
+
+        labeledClusterCentroids.reflectors.push_back(tempReflector);
+      }
+
+      return labeledClusterCentroids;
+    }
+
+
+
+    //-----------------------------find triangles (map and lidar)--------------------------------//
+    /**
+     * @brief findTriangles finds possible constellations of 3 points/reflectors that builds up a triangle
+     * @param inputReflectors
+     * @return triangleList
+     */
     localisation_pkg::trianglesList findTriangles (localisation_pkg::reflectorList inputReflectors)
     {
       for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
@@ -200,6 +262,13 @@ public:
       return triangleList;
     }
 
+    /**
+     * @brief isTriangle find out wether a triangle can be build from 3 2D-points
+     * @param PointA
+     * @param PointB
+     * @param PointC
+     * @return true/false
+     */
     bool isTriangle (geometry_msgs::Point32 PointA, geometry_msgs::Point32 PointB, geometry_msgs::Point32 PointC)
     {
       float distanceA = calcDistance(PointA, PointB);
@@ -214,6 +283,77 @@ public:
       return false;
     }
 
+    /**
+     * @brief findUsableTriangles finds all triangles from list of triangles that are usable (lidar inside)
+     * @param inputTriangles
+     * @return usableTriangles
+     */
+    localisation_pkg::trianglesList findUsableTriangles (localisation_pkg::trianglesList inputTriangles)
+    {
+
+      localisation_pkg::trianglesList usableTriangles;
+
+      for (unsigned int i=0; i<inputTriangles.triangles.size(); i++)
+      {
+        if (inTriangle(inputTriangles.triangles.at(i)))
+        {
+            localisation_pkg::triangle tempTriangle;
+            tempTriangle = inputTriangles.triangles.at(i);
+            tempTriangle.usable = true;
+            usableTriangles.triangles.push_back(tempTriangle);
+        }
+      }
+
+      return usableTriangles;
+    }
+
+    /**
+     * @brief inTriangle finds out wether the lidar is in the triangle or not
+     * @param triangle
+     * @return true/false
+     */
+    bool inTriangle (localisation_pkg::triangle triangle)
+    {
+      geometry_msgs::Point32 point;
+      point.x = 0.0F;
+      point.y = 0.0F;
+      point.z = 0.0F;
+
+      float checkSideA, checkSideB, checkSideC;
+      bool cw, ccw;
+
+      //Checken auf welcher Seite von 3 Geraden zwischen Eckpunkten Dreieck liegt (durch Aufspannen Halbebene und Bestimmen Determinante)
+      //https://www.aleph1.info/?call=Puc&permalink=hm1_5_5_Z2
+      checkSideA = checkSide(point, triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
+      checkSideB = checkSide(point, triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
+      checkSideC = checkSide(point, triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
+
+      cw = (checkSideA < 0) || (checkSideB < 0) || (checkSideC < 0); //Punkt liegt links von min. einer Ebene
+      ccw = (checkSideA > 0) || (checkSideB > 0) || (checkSideC > 0);//Punkt liegt rechts von min. einer Ebene
+
+      return !(cw && ccw);  //wenn beide Fälle eintreten kann Punkt nicht in Dreieck liegen
+    }
+
+
+    /**
+     * @brief checkSide get determinant from 3 points that build a half plane and a vector
+     * @param A
+     * @param B
+     * @param C
+     * @return determinant
+     */
+    float checkSide (geometry_msgs::Point32 A, geometry_msgs::Point32 B, geometry_msgs::Point32 C)
+    {
+      return (A.x - C.x) * (B.y - C.y) - (B.x - C.x) * (A.y - C.y);
+    }
+
+
+    //-----------------------------pull gazebo model states--------------------------------//
+    /**
+     * @brief getReflectorPositions get list of reflector positions from gazebo model data
+     * @param inputModelStates
+     * @return reflectorList
+     */
     localisation_pkg::reflectorList getReflectorPositions (gazebo_msgs::ModelStates inputModelStates)
     {
       std::vector<geometry_msgs::Pose> poseList;
@@ -242,22 +382,64 @@ public:
       return reflectorList;
     }
 
-    localisation_pkg::reflectorList labelClusterCentroids (localisation_pkg::pointList inputCentroids)
+    /**
+     * @brief getGazeboLidarPos get position of lidar from gazebo model data
+     * @param inputModelStates
+     * @return gazeboLidarPos
+     */
+    geometry_msgs::Point32 getGazeboLidarPos (gazebo_msgs::ModelStates inputModelStates)
     {
-      localisation_pkg::reflectorList labeledClusterCentroids;
+      geometry_msgs::Point32 gazeboLidarPos;
 
-      for (unsigned int i=0; i<inputCentroids.points.size(); i++)
+      for (unsigned int i = 0; i<inputModelStates.name.size(); i++)
       {
-        localisation_pkg::reflector tempReflector;
-        tempReflector.position = inputCentroids.points.at(i);
-        tempReflector.label = i;
-
-        labeledClusterCentroids.reflectors.push_back(tempReflector);
+        if (inputModelStates.name.at(i) == "lidar_robot")
+        {
+          gazeboLidarPos.x = inputModelStates.pose.at(i).position.x;
+          gazeboLidarPos.y = inputModelStates.pose.at(i).position.y;
+          gazeboLidarPos.z = 0;
+        }
       }
 
-      return labeledClusterCentroids;
+      return gazeboLidarPos;
     }
 
+
+
+    //-----------------------------match triangles--------------------------------//
+    /**
+     * @brief findTrianglePairs matches triangles from map and lidar
+     * @param mapTriangles
+     * @param usableTriangles
+     * @return trianglePairs
+     */
+    localisation_pkg::trianglePairList findTrianglePairs (localisation_pkg::trianglesList mapTriangles, localisation_pkg::trianglesList usableTriangles)
+    {
+      localisation_pkg::trianglePairList trianglePairs;
+
+      for (unsigned int i=0; i<usableTriangles.triangles.size(); i++)
+      {
+        for (unsigned int j=0; j<mapTriangles.triangles.size(); j++)
+        {
+          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j)))
+          {
+            localisation_pkg::trianglePair tempTrianglePair;
+            tempTrianglePair.triangleLidar = usableTriangles.triangles.at(i);
+            tempTrianglePair.triangleMap = mapTriangles.triangles.at(j);
+            trianglePairs.trianglePairs.push_back(tempTrianglePair);
+          }
+        }
+      }
+
+      return trianglePairs;
+    }
+
+    /**
+     * @brief compareTriangles compares triangles wether they are congruent or not
+     * @param triangleA
+     * @param triangleB
+     * @return true/false
+     */
     bool compareTriangles (localisation_pkg::triangle triangleA, localisation_pkg::triangle triangleB)
     {
       float tolerance = 0.5F;
@@ -270,28 +452,13 @@ public:
     }
 
 
-    localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
-    {
-      //Using Bubble Sort
-      localisation_pkg::triangleSide tempSide;
 
-      for (unsigned int i=0; i<inputList.sides.size(); i++)
-      {
-        for (unsigned int j=0; j<inputList.sides.size(); j++)
-        {
-          if(inputList.sides.at(j).length < inputList.sides.at(i).length)
-          {
-            tempSide = inputList.sides.at(i);
-            inputList.sides.at(i) = inputList.sides.at(j);
-            inputList.sides.at(j) = tempSide;
-          }
-        }
-      }
-
-      return inputList;
-    }
-
-
+    //-----------------------------match reflectors--------------------------------//
+    /**
+     * @brief getTriangleSides creates list of triangle sides from triangle data
+     * @param triangle
+     * @return sideList
+     */
     localisation_pkg::triangleSideList getTriangleSides (localisation_pkg::triangle triangle)
     {
       localisation_pkg::triangleSide sideA;
@@ -319,82 +486,37 @@ public:
       return sideList;
     }
 
-
-    localisation_pkg::trianglePairList findTrianglePairs (localisation_pkg::trianglesList mapTriangles, localisation_pkg::trianglesList usableTriangles)
+    /**
+     * @brief sortSideList sorts list of triangle sides by length
+     * @param inputList
+     * @return inputList(sorted)
+     */
+    localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
     {
-      localisation_pkg::trianglePairList trianglePairs;
+      //Using Bubble Sort
+      localisation_pkg::triangleSide tempSide;
 
-      for (unsigned int i=0; i<usableTriangles.triangles.size(); i++)
+      for (unsigned int i=0; i<inputList.sides.size(); i++)
       {
-        for (unsigned int j=0; j<mapTriangles.triangles.size(); j++)
+        for (unsigned int j=0; j<inputList.sides.size(); j++)
         {
-          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j)))
+          if(inputList.sides.at(j).length < inputList.sides.at(i).length)
           {
-            localisation_pkg::trianglePair tempTrianglePair;
-            tempTrianglePair.triangleLidar = usableTriangles.triangles.at(i);
-            tempTrianglePair.triangleMap = mapTriangles.triangles.at(j);
-            trianglePairs.trianglePairs.push_back(tempTrianglePair);
+            tempSide = inputList.sides.at(i);
+            inputList.sides.at(i) = inputList.sides.at(j);
+            inputList.sides.at(j) = tempSide;
           }
         }
       }
 
-      return trianglePairs;
+      return inputList;
     }
 
-
-
-    bool inTriangle (localisation_pkg::triangle triangle)
-    {
-      geometry_msgs::Point32 point;
-      point.x = 0.0F;
-      point.y = 0.0F;
-      point.z = 0.0F;
-
-      float checkSideA, checkSideB, checkSideC;
-      bool cw, ccw;
-
-      //Checken auf welcher Seite von 3 Geraden zwischen Eckpunkten Dreieck liegt (durch Aufspannen Halbebene und Bestimmen Determinante)
-      //https://www.aleph1.info/?call=Puc&permalink=hm1_5_5_Z2
-      checkSideA = checkSide(point, triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
-      checkSideB = checkSide(point, triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
-      checkSideC = checkSide(point, triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
-
-      cw = (checkSideA < 0) || (checkSideB < 0) || (checkSideC < 0); //Punkt liegt links von min. einer Ebene
-      ccw = (checkSideA > 0) || (checkSideB > 0) || (checkSideC > 0);//Punkt liegt rechts von min. einer Ebene
-
-      return !(cw && ccw);  //wenn beide Fälle eintreten kann Punkt nicht in Dreieck liegen
-    }
-
-
-
-    float checkSide (geometry_msgs::Point32 A, geometry_msgs::Point32 B, geometry_msgs::Point32 C)
-    {
-      return (A.x - C.x) * (B.y - C.y) - (B.x - C.x) * (A.y - C.y);
-    }
-
-
-
-
-    localisation_pkg::trianglesList findUsableTriangles (localisation_pkg::trianglesList inputTriangles)
-    {
-
-      localisation_pkg::trianglesList usableTriangles;
-
-      for (unsigned int i=0; i<inputTriangles.triangles.size(); i++)
-      {
-        if (inTriangle(inputTriangles.triangles.at(i)))
-        {
-            localisation_pkg::triangle tempTriangle;
-            tempTriangle = inputTriangles.triangles.at(i);
-            tempTriangle.usable = true;
-            usableTriangles.triangles.push_back(tempTriangle);
-        }
-      }
-
-      return usableTriangles;
-    }
-
-
+    /**
+     * @brief getCalcTriangelsList get list of triangles with matched reflectors
+     * @param trianglePairs
+     * @return calcTriangleList
+     */
     localisation_pkg::calcTriangleList getCalcTriangelsList (localisation_pkg::trianglePairList trianglePairs)
     {
       localisation_pkg::calcTriangleList calcTriangleList;
@@ -407,7 +529,11 @@ public:
       return calcTriangleList;
     }
 
-
+    /**
+     * @brief matchReflectors matches the reflectors of map triangle and lidar triangle
+     * @param inputPair
+     * @return outputPairs
+     */
     localisation_pkg::calcTriangle matchReflectors (localisation_pkg::trianglePair inputPair)
     {
       std::vector<std::pair<localisation_pkg::reflectorPair, localisation_pkg::reflectorPair>> possibleReflectorPairs;
@@ -470,8 +596,12 @@ public:
     }
 
 
-
-
+    /**
+     * @brief compareReflectorPair compares reflector pairs by label
+     * @param pairA
+     * @param pairB
+     * @return true/false
+     */
     bool compareReflectorPair (localisation_pkg::reflectorPair pairA, localisation_pkg::reflectorPair pairB)
     {
       if (pairA.reflectorMap.label == pairB.reflectorMap.label && pairA.reflectorLidar.label == pairB.reflectorLidar.label)
@@ -482,6 +612,12 @@ public:
     }
 
 
+    //-----------------------------calculate lidar position--------------------------------//
+    /**
+     * @brief getPosTriangelsList calculates lidar pos for each triangle pair with matched reflectors
+     * @param inputList
+     * @return calcTriangleList
+     */
     localisation_pkg::calcTriangleList getPosTriangelsList (localisation_pkg::calcTriangleList inputList)
     {
       localisation_pkg::calcTriangleList calcTriangleList;
@@ -494,8 +630,11 @@ public:
       return calcTriangleList;
     }
 
-
-
+    /**
+     * @brief calcLidarPos calculate the lidar pos in map triangle with 2D-Trilateration
+     * @param inputCalcTriangle
+     * @return outputCalcTriangle
+     */
     localisation_pkg::calcTriangle calcLidarPos (localisation_pkg::calcTriangle inputCalcTriangle)
     {
       localisation_pkg::calcTriangle outputCalcTriangle;
@@ -540,10 +679,45 @@ public:
 
     }
 
-
-    float normVector (geometry_msgs::Point32 point) // get the norm of a vector
+    /**
+     * @brief normVector get norm of a vector
+     * @param point
+     * @return norm
+     */
+    float normVector (geometry_msgs::Point32 point)
     {
         return sqrt(pow(point.x,2)+pow(point.y,2));
+    }
+
+    /**
+     * @brief getMeanPosition calculate the mean lidar position from every triangle calculation, safe number of used triangles, calculate deviation to actual lidar position
+     * @param inputList
+     * @param gazeboLidarPos
+     * @return outputPosition
+     */
+    localisation_pkg::calcPosition getMeanPosition (localisation_pkg::calcTriangleList inputList, geometry_msgs::Point32 gazeboLidarPos)
+    {
+      float sumX = 0.0F;
+      float sumY = 0.0F;
+      unsigned int countTriangles = 0;
+
+      for (unsigned int i=0; i<inputList.calcTriangles.size(); i++)
+      {
+        sumX += inputList.calcTriangles.at(i).lidarPos.x;
+        sumY += inputList.calcTriangles.at(i).lidarPos.y;
+        countTriangles++;
+      }
+
+      localisation_pkg::calcPosition outputPosition;
+
+      outputPosition.meanLidarPosition.x = sumX/countTriangles;
+      outputPosition.meanLidarPosition.y = sumY/countTriangles;
+      outputPosition.usedTriangles = countTriangles;
+      outputPosition.deviationX = abs(gazeboLidarPos.x - outputPosition.meanLidarPosition.x);
+      outputPosition.deviationY = abs(gazeboLidarPos.y - outputPosition.meanLidarPosition.y);
+      outputPosition.locDeviation = calcDistance(outputPosition.meanLidarPosition, gazeboLidarPos);
+
+      return outputPosition;
     }
 
 

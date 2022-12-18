@@ -1,0 +1,5 @@
+geometry_msgs/Point32 meanLidarPosition
+uint32 usedTriangles
+float32 deviationX
+float32 deviationY
+float32 locDeviation

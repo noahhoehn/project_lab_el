@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   pose_lidar.orientation.x = 0.0;
   pose_lidar.orientation.y = 0.0;
   pose_lidar.orientation.z = 1.0;
-  pose_lidar.orientation.w = 0.0;
+  pose_lidar.orientation.w = 0.5;
   pose_lidar.position.x = posX;
   pose_lidar.position.y = posY;
   pose_lidar.position.z = 0.0;

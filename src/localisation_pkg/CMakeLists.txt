@@ -78,6 +78,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
    reflectorPair.msg
    calcTriangle.msg
    calcTriangleList.msg
+   calcPosition.msg
  )
 
 ## Generate services in the 'srv' folder

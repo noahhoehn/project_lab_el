@@ -41,6 +41,7 @@
 #include "localisation_pkg/calcTriangle.h"
 #include "localisation_pkg/calcTriangleList.h"
 #include "localisation_pkg/reflectorPair.h"
+#include "localisation_pkg/calcPosition.h"
 
 /**
  * @brief The LocalisationNode class
@@ -67,6 +68,7 @@ public:
         trianglePairsPub = node.advertise<localisation_pkg::trianglePairList>("/trianglePairs",1);
         calcTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcTriangles",1);
         calcPosTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcPosTriangles",1);
+        calcPositionPub = node.advertise<localisation_pkg::calcPosition>("/calcPosition",1);
     }
 
     void step()
@@ -81,6 +83,7 @@ public:
         trianglePairsPub.publish(trianglePairs);
         calcTrianglesPub.publish(calcTriangles);
         calcPosTrianglesPub.publish(calcPosTriangles);
+        calcPositionPub.publish(calcPosition);
     }
 
 private:
@@ -103,9 +106,12 @@ private:
     ros::Publisher trianglePairsPub;
     ros::Publisher calcTrianglesPub;
     ros::Publisher calcPosTrianglesPub;
+    ros::Publisher calcPositionPub;
 
+    bool gotMapTriangles = false;
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
+    geometry_msgs::Point32 gazeboLidarPos;
     localisation_pkg::pointList filteredPoints;
     localisation_pkg::pointList clusterCentroids;
     localisation_pkg::reflectorList clusterCentroidsLabeled;
@@ -116,6 +122,7 @@ private:
     localisation_pkg::trianglePairList trianglePairs;
     localisation_pkg::calcTriangleList calcTriangles;
     localisation_pkg::calcTriangleList calcPosTriangles;
+    localisation_pkg::calcPosition calcPosition;
 
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -130,16 +137,19 @@ private:
         trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles);
         calcTriangles = localisation.getCalcTriangelsList(trianglePairs);
         calcPosTriangles = localisation.getPosTriangelsList(calcTriangles);
-
+        calcPosition = localisation.getMeanPosition(calcPosTriangles, gazeboLidarPos);
     }
 
     void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
     {
+      gazeboLidarPos = localisation.getGazeboLidarPos(*msg);
 
-      mapReflectorList = localisation.getReflectorPositions(*msg);
-      mapTriangles = localisation.findTriangles(mapReflectorList);
-
-      reflectorPosesSub.shutdown();
+      if (!gotMapTriangles)
+      {
+          mapReflectorList = localisation.getReflectorPositions(*msg);
+          mapTriangles = localisation.findTriangles(mapReflectorList);
+          gotMapTriangles = true;
+      }
 
     }
 
