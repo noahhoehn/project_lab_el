@@ -1,47 +1,6 @@
 #include <ros/ros.h>
 #include <stdio.h>
-#include "std_msgs/String.h"
-#include "std_msgs/Float32.h"
-#include <gazebo/gazebo.hh>
-#include <gazebo_msgs/ModelStates.h>
-#include <geometry_msgs/Pose.h>
-// PCL specific includes
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/impl/instantiate.hpp>
-#include <pcl/point_types.h>
-#include <pcl/filters/impl/passthrough.hpp>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <pcl/point_cloud.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/PCLPointCloud2.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/passthrough.h>
-#include <velodyne_pointcloud/point_types.h>
-#include <vector>
-#include <pcl_ros/transforms.h>
-#include <tf/transform_listener.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-#include <sensor_msgs/PointCloud.h>
-#include "localisation_pkg/pointList.h"
-#include "localisation_pkg/reflector.h"
-#include "localisation_pkg/reflectorList.h"
-#include "localisation_pkg/triangle.h"
-#include "localisation_pkg/trianglesList.h"
 #include "localisationfunctions.h"
-#include "math.h"
-#include "geometry_msgs/Polygon.h"
-#include "jsk_recognition_msgs/PolygonArray.h"
-#include "localisation_pkg/trianglePair.h"
-#include "localisation_pkg/trianglePairList.h"
-#include "localisation_pkg/triangleSide.h"
-#include "localisation_pkg/triangleSideList.h"
-#include "localisation_pkg/calcTriangle.h"
-#include "localisation_pkg/calcTriangleList.h"
-#include "localisation_pkg/reflectorPair.h"
-#include "localisation_pkg/calcPosition.h"
 
 /**
  * @brief The LocalisationNode class

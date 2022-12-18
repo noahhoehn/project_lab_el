@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <ros/ros.h>
+//#include <ros/ros.h>
 #include <stdio.h>
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
@@ -125,7 +125,7 @@ public:
 
       for (unsigned int i = 0; i < inputPoints.points.size(); i++)
       {
-        if (ignoreIndices.find(i) == ignoreIndices.end())
+        if (ignoreIndices.find(i) == ignoreIndices.end()) //ignore point if it's already in a cluster
         {
           for (unsigned int j = 0; j < inputPoints.points.size(); j++)
           {
@@ -134,17 +134,17 @@ public:
               float distance = calcDistance(inputPoints.points.at(i), inputPoints.points.at(j));
               if (distance < 1.0F)
               {
-                tempNearPoints.points.push_back(inputPoints.points.at(j));
+                tempNearPoints.points.push_back(inputPoints.points.at(j)); //store point in cluster if it's near enough to another point
                 ignoreIndices.insert(j);
               }
             }
           }
 
-          if (tempNearPoints.points.size()>1)
+          if (tempNearPoints.points.size()>1) //min size of cluster is 3 points (2 points from j-loop + 1 point from i-loop)
           {
             tempNearPoints.points.push_back(inputPoints.points.at(i));
             ignoreIndices.insert(i);
-            clusterCentroids.points.push_back(calcCentroid(tempNearPoints));
+            clusterCentroids.points.push_back(calcCentroid(tempNearPoints)); //only cluster centroid stored in return list
           }
         }
 
@@ -162,7 +162,7 @@ public:
      */
     float calcDistance (geometry_msgs::Point32 pointA, geometry_msgs::Point32 pointB)
     {
-      float distance = std::sqrt(std::pow(pointA.x - pointB.x,2) + std::pow(pointA.y - pointB.y,2) + std::pow(pointA.z - pointB.z,2));
+      float distance = std::sqrt(std::pow(pointA.x - pointB.x,2) + std::pow(pointA.y - pointB.y,2) + std::pow(pointA.z - pointB.z,2));  //calculate distance with pythagoras theorem
       return distance;
     }
 
@@ -180,7 +180,7 @@ public:
       float averageY = 0.0F;
       float averageZ = 0.0F;
 
-      for (unsigned int k = 0; k < inputPoints.points.size(); k++)
+      for (unsigned int k = 0; k < inputPoints.points.size(); k++)  //collect all coordinates
       {
         collectX.push_back(inputPoints.points.at(k).x);
         collectY.push_back(inputPoints.points.at(k).y);
@@ -189,7 +189,7 @@ public:
 
       auto const vectorSize = static_cast<float>(inputPoints.points.size());
 
-      averageX = std::accumulate(collectX.begin(), collectX.end(), 0.0F)/vectorSize;
+      averageX = std::accumulate(collectX.begin(), collectX.end(), 0.0F)/vectorSize;  //calculate mean-value for each coordinate
       averageY = std::accumulate(collectY.begin(), collectY.end(), 0.0F)/vectorSize;
       averageZ = std::accumulate(collectZ.begin(), collectZ.end(), 0.0F)/vectorSize;
 
@@ -233,14 +233,14 @@ public:
      */
     localisation_pkg::trianglesList findTriangles (localisation_pkg::reflectorList inputReflectors)
     {
-      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
+      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++) //set every z-coordinate to zero to get 2D-problem
       {
         inputReflectors.reflectors.at(i).position.z = 0.0F;
       }
 
       localisation_pkg::trianglesList triangleList;
 
-      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++)
+      for (unsigned int i=0; i<inputReflectors.reflectors.size(); i++) //3 for-loops to check every combination of 3 points from input reflectors
       {
         for (unsigned int j=i+1; j<inputReflectors.reflectors.size(); j++)
         {
@@ -275,7 +275,7 @@ public:
       float distanceB = calcDistance(PointB, PointC);
       float distanceC = calcDistance(PointC, PointA);
 
-      if (distanceA < distanceB + distanceC && distanceB < distanceA + distanceC && distanceC < distanceB + distanceA)
+      if (distanceA < distanceB + distanceC && distanceB < distanceA + distanceC && distanceC < distanceB + distanceA)  //check if triangle can be built with given points with triangle inequality (a + b >= c)
       {
         return true;
       }
@@ -322,16 +322,16 @@ public:
       float checkSideA, checkSideB, checkSideC;
       bool cw, ccw;
 
-      //Checken auf welcher Seite von 3 Geraden zwischen Eckpunkten Dreieck liegt (durch Aufspannen Halbebene und Bestimmen Determinante)
+      //check on which side of three vectors between triangle corners point is located with half-plane and determinant
       //https://www.aleph1.info/?call=Puc&permalink=hm1_5_5_Z2
       checkSideA = checkSide(point, triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
       checkSideB = checkSide(point, triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
       checkSideC = checkSide(point, triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
 
-      cw = (checkSideA < 0) || (checkSideB < 0) || (checkSideC < 0); //Punkt liegt links von min. einer Ebene
-      ccw = (checkSideA > 0) || (checkSideB > 0) || (checkSideC > 0);//Punkt liegt rechts von min. einer Ebene
+      cw = (checkSideA < 0) || (checkSideB < 0) || (checkSideC < 0); //point is left of min. one half-plane
+      ccw = (checkSideA > 0) || (checkSideB > 0) || (checkSideC > 0);//point is right of min. one half-plane
 
-      return !(cw && ccw);  //wenn beide Fälle eintreten kann Punkt nicht in Dreieck liegen
+      return !(cw && ccw);  //if both cases aboth are true, point can not be inside triangle
     }
 
 
@@ -358,14 +358,14 @@ public:
     {
       std::vector<geometry_msgs::Pose> poseList;
 
-      for (unsigned int i = 0; i<inputModelStates.name.size(); i++)
+      for (unsigned int i = 0; i<inputModelStates.name.size(); i++) //find index of reflector models
       {
         if (inputModelStates.name.at(i) == "reflector") poseList.push_back(inputModelStates.pose.at(i));
       }
 
       localisation_pkg::reflectorList reflectorList;
 
-      for (unsigned int i=0; i<poseList.size(); i++)
+      for (unsigned int i=0; i<poseList.size(); i++)  //pull coordinates of reflectors
       {
         float PoseX = poseList.at(i).position.x;
         float PoseY = poseList.at(i).position.y;
@@ -391,7 +391,7 @@ public:
     {
       geometry_msgs::Point32 gazeboLidarPos;
 
-      for (unsigned int i = 0; i<inputModelStates.name.size(); i++)
+      for (unsigned int i = 0; i<inputModelStates.name.size(); i++) //find index of lidar and safe position coordinates
       {
         if (inputModelStates.name.at(i) == "lidar_robot")
         {
@@ -417,11 +417,11 @@ public:
     {
       localisation_pkg::trianglePairList trianglePairs;
 
-      for (unsigned int i=0; i<usableTriangles.triangles.size(); i++)
+      for (unsigned int i=0; i<usableTriangles.triangles.size(); i++) //compare triangles from map with triangles from lidar
       {
         for (unsigned int j=0; j<mapTriangles.triangles.size(); j++)
         {
-          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j)))
+          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j))) //if triangles congruent safe them as a pair of triangles
           {
             localisation_pkg::trianglePair tempTrianglePair;
             tempTrianglePair.triangleLidar = usableTriangles.triangles.at(i);
@@ -444,6 +444,7 @@ public:
     {
       float tolerance = 0.5F;
 
+      //use SSS congruence theorem to check congruency, use tolerance to compensate measurement errors from clustering
       if (abs(triangleA.sideList.sides.at(0).length-triangleB.sideList.sides.at(0).length)<tolerance && abs(triangleA.sideList.sides.at(1).length-triangleB.sideList.sides.at(1).length)<tolerance && abs(triangleA.sideList.sides.at(2).length-triangleB.sideList.sides.at(2).length)<tolerance)
       {
         return true;
@@ -481,7 +482,7 @@ public:
       sideC.reflector2 = triangle.reflectors.at(0);
       sideList.sides.push_back(sideC);
 
-      sideList = sortSideList(sideList);
+      sideList = sortSideList(sideList); //sort side list to make following reflector matching easier
 
       return sideList;
     }
@@ -493,14 +494,14 @@ public:
      */
     localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
     {
-      //Using Bubble Sort
+
       localisation_pkg::triangleSide tempSide;
 
       for (unsigned int i=0; i<inputList.sides.size(); i++)
       {
         for (unsigned int j=0; j<inputList.sides.size(); j++)
         {
-          if(inputList.sides.at(j).length < inputList.sides.at(i).length)
+          if(inputList.sides.at(j).length < inputList.sides.at(i).length) //using bubble sort algorithm
           {
             tempSide = inputList.sides.at(i);
             inputList.sides.at(i) = inputList.sides.at(j);
@@ -544,16 +545,15 @@ public:
       lidarKOS.y = 0.0F;
       lidarKOS.z = 0.0F;
 
-      for (unsigned int i=0; i<3; i++)
+      for (unsigned int i=0; i<3; i++) //store every possible reflector match (between lidar reflector and map reflector)
       {
-        std::pair <localisation_pkg::reflectorPair, localisation_pkg::reflectorPair> tempPairOfPair1;
+        std::pair <localisation_pkg::reflectorPair, localisation_pkg::reflectorPair> tempPairOfPair1; //matches are stored as pairs (if one pair of reflectors from one side is "true", the other pair from the side therefore is also "true")
         tempPairOfPair1.first.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector1;
         tempPairOfPair1.first.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector1;
         tempPairOfPair1.first.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair1.first.reflectorLidar.position);
         tempPairOfPair1.second.reflectorMap = inputPair.triangleMap.sideList.sides.at(i).reflector2;
         tempPairOfPair1.second.reflectorLidar = inputPair.triangleLidar.sideList.sides.at(i).reflector2;
         tempPairOfPair1.second.distance2Lidar = calcDistance(lidarKOS, tempPairOfPair1.second.reflectorLidar.position);
-
         possibleReflectorPairs.push_back(tempPairOfPair1);
 
         std::pair <localisation_pkg::reflectorPair, localisation_pkg::reflectorPair> tempPairOfPair2;
@@ -567,11 +567,11 @@ public:
       }
 
 
-     for (unsigned int j=0; j<possibleReflectorPairs.size(); j++)
+     for (unsigned int j=0; j<possibleReflectorPairs.size(); j++) //compare all possible reflector matches among themselves
      {
        for (unsigned int k=j+1; k<possibleReflectorPairs.size(); k++)
        {
-         if (compareReflectorPair (possibleReflectorPairs.at(j).first, possibleReflectorPairs.at(k).first) ||
+         if (compareReflectorPair (possibleReflectorPairs.at(j).first, possibleReflectorPairs.at(k).first) ||   //if a match appears twice in the list, it must be "true" (and the other pair of the pair must also be)
              compareReflectorPair (possibleReflectorPairs.at(j).second, possibleReflectorPairs.at(k).first)   )
          {
              outputPairs.reflectorPairs.push_back(possibleReflectorPairs.at(j).first);
@@ -636,19 +636,24 @@ public:
      * @return outputCalcTriangle
      */
     localisation_pkg::calcTriangle calcLidarPos (localisation_pkg::calcTriangle inputCalcTriangle)
-    {
+    {          
       localisation_pkg::calcTriangle outputCalcTriangle;
-      geometry_msgs::Point32 point1 = inputCalcTriangle.reflectorPairs.at(0).reflectorMap.position;
+
+      //safe some values in local variables to increase traceability
+      geometry_msgs::Point32 point1 = inputCalcTriangle.reflectorPairs.at(0).reflectorMap.position; //map reflectors position are used to get lidar position in global COS
       geometry_msgs::Point32 point2 = inputCalcTriangle.reflectorPairs.at(1).reflectorMap.position;
       geometry_msgs::Point32 point3 = inputCalcTriangle.reflectorPairs.at(2).reflectorMap.position;
       float r1 = inputCalcTriangle.reflectorPairs.at(0).distance2Lidar;
       float r2 = inputCalcTriangle.reflectorPairs.at(1).distance2Lidar;
       float r3 = inputCalcTriangle.reflectorPairs.at(2).distance2Lidar;
+
       geometry_msgs::Point32 ex;
       geometry_msgs::Point32 aux;
       geometry_msgs::Point32 aux2;
       geometry_msgs::Point32 ey;
 
+
+       //to follow 2D-triangulation along, please refere to textual documentation of project
 
       float p2p1Dist = calcDistance(point2,point1);
       ex.x = (point2.x - point1.x)/p2p1Dist;
