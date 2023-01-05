@@ -3,7 +3,6 @@
 #include <movefunctions.h>
 
 
-
 class MoveNode
 {
 public:

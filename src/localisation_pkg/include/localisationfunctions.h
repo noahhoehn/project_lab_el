@@ -717,21 +717,6 @@ public:
     {
 
       localisation_pkg::calcPosition outputPosition;
-
-//      float sumX = 0.0F;
-//      float sumY = 0.0F;
-//      unsigned int countTriangles = 0;
-
-//      for (unsigned int i=0; i<inputList.calcTriangles.size(); i++)
-//      {
-//        sumX += inputList.calcTriangles.at(i).lidarPos.x;
-//        sumY += inputList.calcTriangles.at(i).lidarPos.y;
-//        countTriangles++;
-//      }
-
-//      outputPosition.meanLidarPosition.x = sumX/countTriangles;
-//      outputPosition.meanLidarPosition.y = sumY/countTriangles;
-
       std::vector<float> listX;
       std::vector<float> listY;
       unsigned int countTriangles = 0;
@@ -765,7 +750,11 @@ public:
       return outputPosition;
     }
 
-
+    /**
+     * @brief findMedian calculate the median of a dataset in vector
+     * @param a
+     * @return median
+     */
     float findMedian(std::vector<float> a)
     {
       size_t size = a.size();

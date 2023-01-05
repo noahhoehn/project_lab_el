@@ -23,6 +23,12 @@ public:
 
   MoveFunctions(){}
 
+  /**
+   * @brief initLidar initialise lidar in position and orientation depending on selected scenario
+   * @param scenario
+   * @param err
+   * @return lidar
+   */
   gazebo_msgs::ModelState initLidar(int scenario, int *err)
   {
     geometry_msgs::Pose pose;
@@ -50,24 +56,24 @@ public:
     switch (scenario)
     {
       case 1:
-        pose.position.x = -5.0F;
-        pose.position.y = 10.0F;
+        pose.position.x = -5;
+        pose.position.y = 10;
       break;
       case 2:
-        pose.position.x = -5.0F;
-        pose.position.y = 28.0F;
+        pose.position.x = -5;
+        pose.position.y = 28;
       break;
       case 3:
-        pose.position.x = -5.0F;
-        pose.position.y = 28.0F;
+        pose.position.x = -5;
+        pose.position.y = 28;
       break;
       case 4:
-        pose.position.x = -80.0F;
-        pose.position.y = 60.0F;
+        pose.position.x = -80;
+        pose.position.y = 60;
       break;
       case 5:
-        pose.position.x = -5.0F;
-        pose.position.y = 26.0F;
+        pose.position.x = -5;
+        pose.position.y = 26;
       break;
       default:
         *err = 1;
@@ -80,12 +86,20 @@ public:
     return lidar;
   }
 
+  /**
+   * @brief moveLidar moving the lidar depending on selected scenario
+   * @param lidar
+   * @param scenario
+   * @param samplingTime
+   * @param endPoint
+   * @return lidar
+   */
   gazebo_msgs::ModelState moveLidar(gazebo_msgs::ModelState lidar, int scenario, const float samplingTime, int* endPoint)
   {
     switch (scenario)
     {
       case 1:
-        if (lidar.pose.position.x <= 50.0F)
+        if (lidar.pose.position.x <= 50)
         {
           lidar = moveLinear(lidar, 1.0F, 0.0F, calcWayPerStep(10.0F, samplingTime));
         }
@@ -95,7 +109,7 @@ public:
         }
       break;
       case 2:
-        if (lidar.pose.position.x <= 85.0F)
+        if (lidar.pose.position.x <= 85)
         {
           lidar = moveLinear(lidar, 1.0F, 0.0F, calcWayPerStep(10.0F, samplingTime));
         }
@@ -105,7 +119,7 @@ public:
         }
       break;
       case 3:
-        if (lidar.pose.position.x <= 85.0F)
+        if (lidar.pose.position.x <= 85)
         {
           lidar = moveLinear(lidar, 1.0F, 0.0F, calcWayPerStep(10.0F, samplingTime));
         }
@@ -118,18 +132,18 @@ public:
         if (phase == 0)
         {
           lidar = moveLinear(lidar, 88.0F, -7.0F, calcWayPerStep(10.0F, samplingTime));
-          if (lidar.pose.position.x >= 8.0F) phase = 1;
+          if (lidar.pose.position.x >= 8) phase = 1;
         }
 
         else if (phase == 1)
         {
           lidar = moveCircular(lidar, 8, 63, 10, calcWayPerStep(10.0F,samplingTime));
-          if (lidar.pose.position.x <= 8.0F && lidar.pose.position.y > 70.0F) phase = 2;
+          if (lidar.pose.position.x <= 8 && lidar.pose.position.y > 70) phase = 2;
         }
         else if (phase == 2)
         {
           lidar = moveLinear(lidar, -28.0F, 2.0F, calcWayPerStep(10.0F, samplingTime));
-          if (lidar.pose.position.x <= -20.0F) phase = 3;
+          if (lidar.pose.position.x <= -20) phase = 3;
         }
         else
         {
@@ -140,18 +154,18 @@ public:
         if (phase == 0)
         {
           lidar = moveLinear(lidar, 67.0F, 0.0F, calcWayPerStep(10.0F, samplingTime));
-          if (lidar.pose.position.x >= 72.0F) phase = 1;
+          if (lidar.pose.position.x >= 72) phase = 1;
         }
 
         else if (phase == 1)
         {
-          lidar = moveCircular(lidar, 72, 35.5F, 9.5F, calcWayPerStep(10.0F,samplingTime));
-          if (lidar.pose.position.x <= 72.0F && lidar.pose.position.y > 42.0F) phase = 2;
+          lidar = moveCircular(lidar, 72, 35.5, 9.5, calcWayPerStep(10,samplingTime));
+          if (lidar.pose.position.x <= 72 && lidar.pose.position.y > 42) phase = 2;
         }
         else if (phase == 2)
         {
           lidar = moveLinear(lidar, -27, 2.0F, calcWayPerStep(10.0F, samplingTime));
-          if (lidar.pose.position.x <= 45.0F) phase = 3;
+          if (lidar.pose.position.x <= 45) phase = 3;
         }
         else
         {
@@ -164,6 +178,26 @@ public:
 
   }
 
+  /**
+   * @brief calcWayPerStep calculate the way per sampling step with given speed and samplingTime
+   * @param v
+   * @param samplingTime
+   * @return s_step
+   */
+  float calcWayPerStep (float v, const float samplingTime)
+  {
+    float s_step = (v*samplingTime)/3.6F;
+    return s_step;
+  }
+
+  /**
+   * @brief moveLinear moving the lidar linear in direction of given vector at given speed
+   * @param lidar
+   * @param compX
+   * @param compY
+   * @param sStep
+   * @return lidar
+   */
   gazebo_msgs::ModelState moveLinear(gazebo_msgs::ModelState lidar, float compX, float compY, float sStep)
   {
     float dirX = compX/getNorm(compX,compY);
@@ -174,7 +208,6 @@ public:
     lidar.pose.position.x += sX;
     lidar.pose.position.y += sY;
 
-
     return lidar;
   }
 
@@ -183,14 +216,17 @@ public:
     return sqrt(pow(compX,2)+pow(compY,2));
   }
 
-  float calcWayPerStep (float v, const float samplingTime)
-  {
-    float f = 1.0F/samplingTime;
-    float v_ms = v/3.6F;
-    float s_step = v_ms/f;
-    return s_step;
-  }
 
+
+  /**
+   * @brief moveCircular moving the lidar along a circle with given origin and radius at given speed
+   * @param lidar
+   * @param originX
+   * @param originY
+   * @param r
+   * @param sStep
+   * @return lidar
+   */
   gazebo_msgs::ModelState moveCircular(gazebo_msgs::ModelState lidar, double originX, double originY, double r, float sStep)
   {
     double phiStep = sStep/r;
@@ -211,6 +247,11 @@ public:
     return lidar;
   }
 
+  /**
+   * @brief getYaw reads yaw out of quaternion
+   * @param lidar
+   * @return yaw
+   */
   double getYaw (gazebo_msgs::ModelState lidar)
   {
     tf2::Quaternion q;

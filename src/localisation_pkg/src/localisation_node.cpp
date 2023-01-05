@@ -18,8 +18,8 @@ public:
         reflectorPosesSub = node.subscribe("/gazebo/model_states", 1, &LocalisationNode::ModelStatesCallback, this);
 
         dataPclPub = node.advertise<sensor_msgs::PointCloud>("/pclFiltered", 1);
-        clusterCentroidsPub = node.advertise<localisation_pkg::pointList>("/clusterCentroids",1);
         filteredPointsPub = node.advertise<localisation_pkg::pointList>("/filteredPoints",1);
+        clusterCentroidsPub = node.advertise<localisation_pkg::pointList>("/clusterCentroids",1);
         mapReflectorListPub = node.advertise<localisation_pkg::reflectorList>("/mapReflectorList",1);
         mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);
         lidarTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarTriangles",1);

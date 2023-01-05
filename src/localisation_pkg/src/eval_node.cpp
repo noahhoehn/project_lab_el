@@ -18,10 +18,10 @@ public:
 
   void step()
   {
-    simTime = ros::Time::now() - begin;
-    outfile.open("eval.txt", std::ios_base::app);
-    outfile << simTime << ";" << actualPos.x << ";" << actualPos.y << ";" << calcPos.x << ";" << calcPos.y << ";" << deviation << "\n";
-    outfile.close();
+    simTime = ros::Time::now() - begin; //calculate Simulation Time
+    outfile.open("eval.txt", std::ios_base::app); //open file
+    outfile << simTime << ";" << actualPos.x << ";" << actualPos.y << ";" << calcPos.x << ";" << calcPos.y << ";" << deviation << "\n"; //safe data to file
+    outfile.close();  //close file
   }
 
 private:
