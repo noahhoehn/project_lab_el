@@ -28,6 +28,7 @@ public:
         calcTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcTriangles",1);
         calcPosTrianglesPub = node.advertise<localisation_pkg::calcTriangleList>("/calcPosTriangles",1);
         calcPositionPub = node.advertise<localisation_pkg::calcPosition>("/calcPosition",1);
+        gazeboLidarPosPub = node.advertise<geometry_msgs::Point32>("/gazeboLidarPos",1);
     }
 
     void step()
@@ -43,6 +44,7 @@ public:
         calcTrianglesPub.publish(calcTriangles);
         calcPosTrianglesPub.publish(calcPosTriangles);
         calcPositionPub.publish(calcPosition);
+        gazeboLidarPosPub.publish(gazeboLidarPos);
     }
 
 private:
@@ -66,14 +68,14 @@ private:
     ros::Publisher calcTrianglesPub;
     ros::Publisher calcPosTrianglesPub;
     ros::Publisher calcPositionPub;
+    ros::Publisher gazeboLidarPosPub;
 
     bool gotMapTriangles = false;
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
     geometry_msgs::Point32 gazeboLidarPos;
     localisation_pkg::pointList filteredPoints;
-    localisation_pkg::pointList clusterCentroids;
-    localisation_pkg::reflectorList clusterCentroidsLabeled;
+    localisation_pkg::reflectorList clusterCentroids;
     localisation_pkg::trianglesList lidarTriangles;
     localisation_pkg::trianglesList lidarUsableTriangles;
     localisation_pkg::trianglesList mapTriangles;
@@ -89,11 +91,10 @@ private:
         dataPcl2 = localisation.filterPointCloud(*msg);
         sensor_msgs::convertPointCloud2ToPointCloud(dataPcl2, dataPcl);
         filteredPoints = localisation.convertPcl2toVector(dataPcl2);
-        clusterCentroids = localisation.clusterPointCloud(filteredPoints);
-        clusterCentroidsLabeled = localisation.labelClusterCentroids(clusterCentroids);
-        lidarTriangles = localisation.findTriangles(clusterCentroidsLabeled);
+        clusterCentroids = localisation.clusterPointCloud(filteredPoints, 3, 1.0F);
+        lidarTriangles = localisation.findTriangles(clusterCentroids);
         lidarUsableTriangles = localisation.findUsableTriangles(lidarTriangles);
-        trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles);
+        trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles, 0.5F);
         calcTriangles = localisation.getCalcTriangelsList(trianglePairs);
         calcPosTriangles = localisation.getPosTriangelsList(calcTriangles);
         calcPosition = localisation.getMeanPosition(calcPosTriangles, gazeboLidarPos);
@@ -107,6 +108,7 @@ private:
       {
           mapReflectorList = localisation.getReflectorPositions(*msg);
           mapTriangles = localisation.findTriangles(mapReflectorList);
+          mapTriangles = localisation.filterMapTriangles(mapTriangles, 180.0F);
           gotMapTriangles = true;
       }
 

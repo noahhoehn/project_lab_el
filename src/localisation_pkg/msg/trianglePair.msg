@@ -1,5 +1,2 @@
 localisation_pkg/triangle triangleMap
 localisation_pkg/triangle triangleLidar
-float32 transformX
-float32 transformY
-float32 transformW

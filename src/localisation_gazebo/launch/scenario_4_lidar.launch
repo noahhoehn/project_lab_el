@@ -11,7 +11,7 @@
   <gui>
     <camera name="cam">
      <!-- <pose>0 0 0  0 1.5708 1.5708</pose> -->
-        <pose>-21.78 -9.9 14.32  0 0.35 0.53</pose>
+        <pose>26.368683 -27.017195 44.166912  0 0.459642 1.992195</pose>
     </camera>
   </gui>
 
@@ -35,7 +35,13 @@
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
 
+  <!-- Start localisation node -->
+  <node pkg="localisation_pkg" name="localisation" type="localisation_node" output="screen" required="true"/>
 
+  <!-- Start rviz -->
   <arg name="rviz" default="true"/>
   <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find localisation_gazebo)/rviz/scenario_1.rviz" />
+
+  <!-- Start rqt -->
+  <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/>
 </launch>

@@ -6,12 +6,12 @@
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
   <arg name="verbose" default="false"/>
-  <arg name="world_name" default="$(find localisation_gazebo)/worlds/scenario_3.world"/>
+  <arg name="world_name" default="$(find localisation_gazebo)/worlds/scenario_5.world"/>
 
   <gui>
     <camera name="cam">
      <!-- <pose>0 0 0  0 1.5708 1.5708</pose> -->
-        <pose>-21.78 -9.9 14.32  0 0.35 0.53</pose>
+        <pose>26.368683 -27.017195 44.166912  0 0.459642 1.992195</pose>
     </camera>
   </gui>
 

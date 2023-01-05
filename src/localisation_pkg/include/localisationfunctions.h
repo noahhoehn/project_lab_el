@@ -34,6 +34,8 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include "math.h"
+#include "cmath"
+#include <algorithm>
 #include "utility"
 //created messages
 #include "localisation_pkg/pointList.h"
@@ -80,7 +82,7 @@ public:
         //Set Filter Parameters (Input Cloud, Filter Name, Upper and lower filter limit)
         filter.setInputCloud(pclCloud2Ptr);
         filter.setFilterFieldName("intensity");
-        filter.setFilterLimits(150.0, 250.0);
+        filter.setFilterLimits(150.0, 255.0);
         // Apply filter -> cloud_filtered is the filtered PCL PointCloud2
         filter.filter(pclCloud2Filtered);
 
@@ -117,7 +119,7 @@ public:
      * @param inputPoints
      * @return clusterCentroids
      */
-    localisation_pkg::pointList clusterPointCloud(const localisation_pkg::pointList inputPoints)
+    localisation_pkg::reflectorList clusterPointCloud(const localisation_pkg::pointList inputPoints, unsigned int minPoints, float maxDistance)
     {
       std::set<unsigned int> ignoreIndices;
       localisation_pkg::pointList clusterCentroids;
@@ -132,7 +134,7 @@ public:
             if (i != j && ignoreIndices.find(j) == ignoreIndices.end())
             {
               float distance = calcDistance(inputPoints.points.at(i), inputPoints.points.at(j));
-              if (distance < 1.0F)
+              if (distance < maxDistance)
               {
                 tempNearPoints.points.push_back(inputPoints.points.at(j)); //store point in cluster if it's near enough to another point
                 ignoreIndices.insert(j);
@@ -140,7 +142,7 @@ public:
             }
           }
 
-          if (tempNearPoints.points.size()>1) //min size of cluster is 3 points (2 points from j-loop + 1 point from i-loop)
+          if (tempNearPoints.points.size() >= (minPoints-1)) //check if enough points found for cluster
           {
             tempNearPoints.points.push_back(inputPoints.points.at(i));
             ignoreIndices.insert(i);
@@ -151,7 +153,18 @@ public:
         tempNearPoints.points.clear();
       }
 
-      return clusterCentroids;
+      localisation_pkg::reflectorList labeledClusterCentroids;
+
+      for (unsigned int i=0; i<clusterCentroids.points.size(); i++)
+      {
+        localisation_pkg::reflector tempReflector;
+        tempReflector.position = clusterCentroids.points.at(i);
+        tempReflector.label = i;
+
+        labeledClusterCentroids.reflectors.push_back(tempReflector);
+      }
+
+      return labeledClusterCentroids;
     }
 
     /**
@@ -200,27 +213,6 @@ public:
       averagePoint.z = averageZ;
 
       return averagePoint;
-    }
-
-    /**
-     * @brief labelClusterCentroids labels input points with increasing numbers
-     * @param inputCentroids
-     * @return labeledClusterCentroids
-     */
-    localisation_pkg::reflectorList labelClusterCentroids (localisation_pkg::pointList inputCentroids)
-    {
-      localisation_pkg::reflectorList labeledClusterCentroids;
-
-      for (unsigned int i=0; i<inputCentroids.points.size(); i++)
-      {
-        localisation_pkg::reflector tempReflector;
-        tempReflector.position = inputCentroids.points.at(i);
-        tempReflector.label = i;
-
-        labeledClusterCentroids.reflectors.push_back(tempReflector);
-      }
-
-      return labeledClusterCentroids;
     }
 
 
@@ -282,6 +274,84 @@ public:
 
       return false;
     }
+
+
+    /**
+     * @brief getTriangleSides creates list of triangle sides from triangle data
+     * @param triangle
+     * @return sideList
+     */
+    localisation_pkg::triangleSideList getTriangleSides (localisation_pkg::triangle triangle)
+    {
+      localisation_pkg::triangleSide sideA;
+      localisation_pkg::triangleSide sideB;
+      localisation_pkg::triangleSide sideC;
+      localisation_pkg::triangleSideList sideList;
+
+      sideA.length = calcDistance(triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
+      sideA.reflector1 = triangle.reflectors.at(0);
+      sideA.reflector2 = triangle.reflectors.at(1);
+      sideList.sides.push_back(sideA);
+
+      sideB.length = calcDistance(triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
+      sideB.reflector1 = triangle.reflectors.at(1);
+      sideB.reflector2 = triangle.reflectors.at(2);
+      sideList.sides.push_back(sideB);
+
+      sideC.length = calcDistance(triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
+      sideC.reflector1 = triangle.reflectors.at(2);
+      sideC.reflector2 = triangle.reflectors.at(0);
+      sideList.sides.push_back(sideC);
+
+      sideList = sortSideList(sideList); //sort side list to make following reflector matching easier
+
+      return sideList;
+    }
+
+    /**
+     * @brief sortSideList sorts list of triangle sides by length
+     * @param inputList
+     * @return inputList(sorted)
+     */
+    localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
+    {
+
+      localisation_pkg::triangleSide tempSide;
+
+      for (unsigned int i=0; i<inputList.sides.size(); i++)
+      {
+        for (unsigned int j=0; j<inputList.sides.size(); j++)
+        {
+          if(inputList.sides.at(j).length < inputList.sides.at(i).length) //using bubble sort algorithm
+          {
+            tempSide = inputList.sides.at(i);
+            inputList.sides.at(i) = inputList.sides.at(j);
+            inputList.sides.at(j) = tempSide;
+          }
+        }
+      }
+
+      return inputList;
+    }
+
+    localisation_pkg::trianglesList filterMapTriangles (localisation_pkg::trianglesList inputTriangles, float maxLength)
+    {
+      localisation_pkg::trianglesList filteredTriangles;
+
+      for (unsigned int i=0; i<inputTriangles.triangles.size(); i++)
+      {
+        if (inputTriangles.triangles.at(i).sideList.sides.front().length < maxLength)
+        {
+          localisation_pkg::triangle tempTriangle;
+          tempTriangle = inputTriangles.triangles.at(i);
+          tempTriangle.usable = true;
+          filteredTriangles.triangles.push_back(tempTriangle);
+        }
+      }
+
+      return filteredTriangles;
+    }
+
 
     /**
      * @brief findUsableTriangles finds all triangles from list of triangles that are usable (lidar inside)
@@ -413,7 +483,7 @@ public:
      * @param usableTriangles
      * @return trianglePairs
      */
-    localisation_pkg::trianglePairList findTrianglePairs (localisation_pkg::trianglesList mapTriangles, localisation_pkg::trianglesList usableTriangles)
+    localisation_pkg::trianglePairList findTrianglePairs (localisation_pkg::trianglesList mapTriangles, localisation_pkg::trianglesList usableTriangles, float tolerance)
     {
       localisation_pkg::trianglePairList trianglePairs;
 
@@ -421,7 +491,7 @@ public:
       {
         for (unsigned int j=0; j<mapTriangles.triangles.size(); j++)
         {
-          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j))) //if triangles congruent safe them as a pair of triangles
+          if (compareTriangles(usableTriangles.triangles.at(i), mapTriangles.triangles.at(j), tolerance)) //if triangles congruent safe them as a pair of triangles
           {
             localisation_pkg::trianglePair tempTrianglePair;
             tempTrianglePair.triangleLidar = usableTriangles.triangles.at(i);
@@ -440,9 +510,8 @@ public:
      * @param triangleB
      * @return true/false
      */
-    bool compareTriangles (localisation_pkg::triangle triangleA, localisation_pkg::triangle triangleB)
+    bool compareTriangles (localisation_pkg::triangle triangleA, localisation_pkg::triangle triangleB, float tolerance)
     {
-      float tolerance = 0.5F;
 
       //use SSS congruence theorem to check congruency, use tolerance to compensate measurement errors from clustering
       if (abs(triangleA.sideList.sides.at(0).length-triangleB.sideList.sides.at(0).length)<tolerance && abs(triangleA.sideList.sides.at(1).length-triangleB.sideList.sides.at(1).length)<tolerance && abs(triangleA.sideList.sides.at(2).length-triangleB.sideList.sides.at(2).length)<tolerance)
@@ -455,63 +524,7 @@ public:
 
 
     //-----------------------------match reflectors--------------------------------//
-    /**
-     * @brief getTriangleSides creates list of triangle sides from triangle data
-     * @param triangle
-     * @return sideList
-     */
-    localisation_pkg::triangleSideList getTriangleSides (localisation_pkg::triangle triangle)
-    {
-      localisation_pkg::triangleSide sideA;
-      localisation_pkg::triangleSide sideB;
-      localisation_pkg::triangleSide sideC;
-      localisation_pkg::triangleSideList sideList;
 
-      sideA.length = calcDistance(triangle.reflectors.at(0).position, triangle.reflectors.at(1).position);
-      sideA.reflector1 = triangle.reflectors.at(0);
-      sideA.reflector2 = triangle.reflectors.at(1);
-      sideList.sides.push_back(sideA);
-
-      sideB.length = calcDistance(triangle.reflectors.at(1).position, triangle.reflectors.at(2).position);
-      sideB.reflector1 = triangle.reflectors.at(1);
-      sideB.reflector2 = triangle.reflectors.at(2);
-      sideList.sides.push_back(sideB);
-
-      sideC.length = calcDistance(triangle.reflectors.at(2).position, triangle.reflectors.at(0).position);
-      sideC.reflector1 = triangle.reflectors.at(2);
-      sideC.reflector2 = triangle.reflectors.at(0);
-      sideList.sides.push_back(sideC);
-
-      sideList = sortSideList(sideList); //sort side list to make following reflector matching easier
-
-      return sideList;
-    }
-
-    /**
-     * @brief sortSideList sorts list of triangle sides by length
-     * @param inputList
-     * @return inputList(sorted)
-     */
-    localisation_pkg::triangleSideList sortSideList (localisation_pkg::triangleSideList inputList)
-    {
-
-      localisation_pkg::triangleSide tempSide;
-
-      for (unsigned int i=0; i<inputList.sides.size(); i++)
-      {
-        for (unsigned int j=0; j<inputList.sides.size(); j++)
-        {
-          if(inputList.sides.at(j).length < inputList.sides.at(i).length) //using bubble sort algorithm
-          {
-            tempSide = inputList.sides.at(i);
-            inputList.sides.at(i) = inputList.sides.at(j);
-            inputList.sides.at(j) = tempSide;
-          }
-        }
-      }
-
-      return inputList;
-    }
 
     /**
      * @brief getCalcTriangelsList get list of triangles with matched reflectors
@@ -702,27 +715,76 @@ public:
      */
     localisation_pkg::calcPosition getMeanPosition (localisation_pkg::calcTriangleList inputList, geometry_msgs::Point32 gazeboLidarPos)
     {
-      float sumX = 0.0F;
-      float sumY = 0.0F;
+
+      localisation_pkg::calcPosition outputPosition;
+
+//      float sumX = 0.0F;
+//      float sumY = 0.0F;
+//      unsigned int countTriangles = 0;
+
+//      for (unsigned int i=0; i<inputList.calcTriangles.size(); i++)
+//      {
+//        sumX += inputList.calcTriangles.at(i).lidarPos.x;
+//        sumY += inputList.calcTriangles.at(i).lidarPos.y;
+//        countTriangles++;
+//      }
+
+//      outputPosition.meanLidarPosition.x = sumX/countTriangles;
+//      outputPosition.meanLidarPosition.y = sumY/countTriangles;
+
+      std::vector<float> listX;
+      std::vector<float> listY;
       unsigned int countTriangles = 0;
 
       for (unsigned int i=0; i<inputList.calcTriangles.size(); i++)
       {
-        sumX += inputList.calcTriangles.at(i).lidarPos.x;
-        sumY += inputList.calcTriangles.at(i).lidarPos.y;
+        listX.push_back(inputList.calcTriangles.at(i).lidarPos.x);
+        listY.push_back(inputList.calcTriangles.at(i).lidarPos.y);
         countTriangles++;
       }
 
-      localisation_pkg::calcPosition outputPosition;
-
-      outputPosition.meanLidarPosition.x = sumX/countTriangles;
-      outputPosition.meanLidarPosition.y = sumY/countTriangles;
-      outputPosition.usedTriangles = countTriangles;
-      outputPosition.deviationX = abs(gazeboLidarPos.x - outputPosition.meanLidarPosition.x);
-      outputPosition.deviationY = abs(gazeboLidarPos.y - outputPosition.meanLidarPosition.y);
-      outputPosition.locDeviation = calcDistance(outputPosition.meanLidarPosition, gazeboLidarPos);
+      if (countTriangles == 0)
+      {
+        outputPosition.meanLidarPosition.x = NAN;
+        outputPosition.meanLidarPosition.y = NAN;
+        outputPosition.usedTriangles = countTriangles;
+        outputPosition.deviationX = NAN;
+        outputPosition.deviationY = NAN;
+        outputPosition.locDeviation = NAN;
+      }
+      else
+      {
+        outputPosition.meanLidarPosition.x = findMedian(listX);
+        outputPosition.meanLidarPosition.y = findMedian(listY);
+        outputPosition.usedTriangles = countTriangles;
+        outputPosition.deviationX = abs(gazeboLidarPos.x - outputPosition.meanLidarPosition.x);
+        outputPosition.deviationY = abs(gazeboLidarPos.y - outputPosition.meanLidarPosition.y);
+        outputPosition.locDeviation = calcDistance(outputPosition.meanLidarPosition, gazeboLidarPos);
+      }
 
       return outputPosition;
+    }
+
+
+    float findMedian(std::vector<float> a)
+    {
+      size_t size = a.size();
+      if (size == 0)
+      {
+        return 0.0F;
+      }else
+      {
+        std::sort(a.begin(), a.end());
+        if (size % 2 == 0)
+        {
+          return (a[size / 2 - 1] + a[size / 2]) / 2;
+        }
+        else
+        {
+          return a[size / 2];
+        }
+
+      }
     }
 
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <world name="Scenario 4">
+  <world name="Scenario 5">
     <include>
       <uri>model://ground_plane</uri>
     </include>
@@ -10,122 +10,102 @@
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>24.23453069159097 72.60340338079206 0 0 0 0</pose>
+      <pose>4 16 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>25.110128117254884 62.556796118437035 0 0 0 0</pose>
+      <pose>20 15 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>6.613430092817835 46.18712223539073 0 0 0 0</pose>
+      <pose>35 18 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-3.229167317488991 46.71820707009731 0 0 0 0</pose>
+      <pose>48 17 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-22.30017051781487 65.18576561881389 0 0 0 0</pose>
+      <pose>55 19 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-1.955650435404673 64.1119798545866 0 0 0 0</pose>
+      <pose>65 14 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-10.401316266231916 82.78836889114396 0 0 0 0</pose>
+      <pose>75 18 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>8.0180331161751 63.59574114875585 0 0 0 0</pose>
+      <pose>15 35 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-13.239715544631524 46.98868672917725 0 0 0 0</pose>
+      <pose>30 33 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>25.950887544916895 52.648231164029184 0 0 0 0</pose>
+      <pose>41 37 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-12.150989771539455 64.66454313088197 0 0 0 0</pose>
+      <pose>48 35 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>8.867974597470685 81.53293018567226 0 0 0 0</pose>
+      <pose>59 37 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-23.2109480220701 47.59271717578615 0 0 0 0</pose>
+      <pose>72 33 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-0.8662201081683424 81.9764862640047 0 0 0 0</pose>
+      <pose>87 23 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-71.7887363093007 69.45400363240961 0 0 0 0</pose>
+      <pose>89 38 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-32.219232314169915 65.98367144288204 0 0 0 0</pose>
+      <pose>86 49 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-32.92418308874501 48.42020926379814 0 0 0 0</pose>
+      <pose>77 55 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-61.55023355764459 68.56318577636205 0 0 0 0</pose>
+      <pose>69 54 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-62.599504157412895 50.87119470279133 0 0 0 0</pose>
+      <pose>60 59 0 0 0 0</pose>
     </include>
     <include>
       <uri>model://reflector_1</uri>
       <name>reflector</name>
-      <pose>-51.65582975845807 67.62465373275958 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://reflector_1</uri>
-      <name>reflector</name>
-      <pose>-42.0866484696929 67.38672466563071 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://reflector_1</uri>
-      <name>reflector</name>
-      <pose>-42.562459307262685 49.333220358124805 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://reflector_1</uri>
-      <name>reflector</name>
-      <pose>-53.000046728608886 50.523049377040536 0 0 0 0</pose>
-    </include>
-    <include>
-      <uri>model://velodyne_hdl32</uri>
-      <name>reflector</name>
-      <pose>15 15 0 0 0 0</pose>
+      <pose>52 55 0 0 0 0</pose>
     </include>
   </world>
 </sdf>

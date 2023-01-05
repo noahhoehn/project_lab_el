@@ -177,9 +177,9 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/localisation_pkg_node.cpp)
 
-add_executable(move_sim src/move_sim.cpp)
 add_executable(localisation_node src/localisation_node.cpp)
-
+add_executable(move_node src/move_node.cpp)
+add_executable(eval_node src/eval_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -199,11 +199,15 @@ add_dependencies(localisation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(move_sim
+target_link_libraries(localisation_node
    ${catkin_LIBRARIES}
 )
 
-target_link_libraries(localisation_node
+target_link_libraries(move_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(eval_node
    ${catkin_LIBRARIES}
 )
 
