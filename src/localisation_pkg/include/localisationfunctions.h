@@ -344,7 +344,6 @@ public:
         {
           localisation_pkg::triangle tempTriangle;
           tempTriangle = inputTriangles.triangles.at(i);
-          tempTriangle.usable = true;
           filteredTriangles.triangles.push_back(tempTriangle);
         }
       }
@@ -477,6 +476,47 @@ public:
 
 
     //-----------------------------match triangles--------------------------------//
+
+    localisation_pkg::trianglesList findMapCompareTriangles (localisation_pkg::trianglesList mapTriangles, geometry_msgs::Point32 gnssPos, float th)
+    {
+      localisation_pkg::trianglesList mapCompareTriangles;
+
+      for (unsigned int i=0; i<mapTriangles.triangles.size(); i++)
+      {
+        if (triangleInCircle(mapTriangles.triangles.at(i), gnssPos.x, gnssPos.y, th))
+        {
+          localisation_pkg::triangle tempTriangle;
+          tempTriangle = mapTriangles.triangles.at(i);
+          tempTriangle.usable = true;
+          mapCompareTriangles.triangles.push_back(tempTriangle);
+        }
+      }
+
+      return mapCompareTriangles;
+    }
+
+    bool triangleInCircle (localisation_pkg::triangle triangle, float centerX, float centerY, float r)
+    {
+      unsigned int countInsidePoints = 0;
+
+      for (unsigned int i=0; i<3; i++)
+      {
+        if (pointInCircle(triangle.reflectors.at(i).position, centerX, centerY, r))
+        {
+          countInsidePoints++;
+        }
+      }
+
+      return countInsidePoints >= 3;
+    }
+
+    bool pointInCircle (geometry_msgs::Point32 point, float centerX, float centerY, float r)
+    {
+      return pow((point.x - centerX), 2) + pow((point.y - centerY), 2) <= pow(r, 2);
+    }
+
+
+
     /**
      * @brief findTrianglePairs matches triangles from map and lidar
      * @param mapTriangles

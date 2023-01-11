@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <stdio.h>
 #include "localisationfunctions.h"
+#include "parameters.h"
 
 /**
  * @brief The LocalisationNode class
@@ -22,6 +23,7 @@ public:
         clusterCentroidsPub = node.advertise<localisation_pkg::pointList>("/clusterCentroids",1);
         mapReflectorListPub = node.advertise<localisation_pkg::reflectorList>("/mapReflectorList",1);
         mapTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapTriangles",1);
+        mapCompareTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/mapCompareTriangles",1);
         lidarTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarTriangles",1);
         lidarUsableTrianglesPub = node.advertise<localisation_pkg::trianglesList>("/lidarUsableTriangles",1);
         trianglePairsPub = node.advertise<localisation_pkg::trianglePairList>("/trianglePairs",1);
@@ -33,18 +35,36 @@ public:
 
     void step()
     {
-        dataPclPub.publish(dataPcl);
-        clusterCentroidsPub.publish(clusterCentroids);
-        filteredPointsPub.publish(filteredPoints);
-        mapReflectorListPub.publish(mapReflectorList);
-        mapTrianglesPub.publish(mapTriangles);
-        lidarTrianglesPub.publish(lidarTriangles);
-        lidarUsableTrianglesPub.publish(lidarUsableTriangles);
-        trianglePairsPub.publish(trianglePairs);
-        calcTrianglesPub.publish(calcTriangles);
-        calcPosTrianglesPub.publish(calcPosTriangles);
-        calcPositionPub.publish(calcPosition);
-        gazeboLidarPosPub.publish(gazeboLidarPos);
+      if (dataAvailable == true)//only do calculation if data is available (otherwise error in filter function, especially needed for first calculation)
+      {
+        localisationFinished = false; //block lidar-callback function from overwriting data
+        dataPcl2Filtered = localisation.filterPointCloud(dataPcl2);
+        sensor_msgs::convertPointCloud2ToPointCloud(dataPcl2Filtered, dataPcl);
+        filteredPoints = localisation.convertPcl2toVector(dataPcl2Filtered);
+        clusterCentroids = localisation.clusterPointCloud(filteredPoints, minPointsForCluster, maxDistanceClusterPoints);
+        lidarTriangles = localisation.findTriangles(clusterCentroids);
+        lidarUsableTriangles = localisation.findUsableTriangles(lidarTriangles);
+        mapCompareTriangles = localisation.findMapCompareTriangles (mapTriangles, gazeboLidarPos, gnssAreaRadiusThreshold);
+        trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles, triangleMatchingTolerance);
+        calcTriangles = localisation.getCalcTriangelsList(trianglePairs);
+        calcPosTriangles = localisation.getPosTriangelsList(calcTriangles);
+        calcPosition = localisation.getMeanPosition(calcPosTriangles, gazeboLidarPos);
+        localisationFinished = true;
+      }
+
+      dataPclPub.publish(dataPcl);
+      clusterCentroidsPub.publish(clusterCentroids);
+      filteredPointsPub.publish(filteredPoints);
+      mapReflectorListPub.publish(mapReflectorList);
+      mapTrianglesPub.publish(mapTriangles);
+      mapCompareTrianglesPub.publish(mapCompareTriangles);
+      lidarTrianglesPub.publish(lidarTriangles);
+      lidarUsableTrianglesPub.publish(lidarUsableTriangles);
+      trianglePairsPub.publish(trianglePairs);
+      calcTrianglesPub.publish(calcTriangles);
+      calcPosTrianglesPub.publish(calcPosTriangles);
+      calcPositionPub.publish(calcPosition);
+      gazeboLidarPosPub.publish(gazeboLidarPos);
     }
 
 private:
@@ -62,6 +82,7 @@ private:
     ros::Publisher filteredPointsPub;
     ros::Publisher lidarTrianglesPub;
     ros::Publisher mapTrianglesPub;
+    ros::Publisher mapCompareTrianglesPub;
     ros::Publisher mapReflectorListPub;
     ros::Publisher lidarUsableTrianglesPub;
     ros::Publisher trianglePairsPub;
@@ -71,14 +92,18 @@ private:
     ros::Publisher gazeboLidarPosPub;
 
     bool gotMapTriangles = false;
+    bool localisationFinished = true;
+    bool dataAvailable = false;
     sensor_msgs::PointCloud dataPcl;
     sensor_msgs::PointCloud2 dataPcl2;
+    sensor_msgs::PointCloud2 dataPcl2Filtered;
     geometry_msgs::Point32 gazeboLidarPos;
     localisation_pkg::pointList filteredPoints;
     localisation_pkg::reflectorList clusterCentroids;
     localisation_pkg::trianglesList lidarTriangles;
     localisation_pkg::trianglesList lidarUsableTriangles;
     localisation_pkg::trianglesList mapTriangles;
+    localisation_pkg::trianglesList mapCompareTriangles;
     localisation_pkg::reflectorList mapReflectorList;
     localisation_pkg::trianglePairList trianglePairs;
     localisation_pkg::calcTriangleList calcTriangles;
@@ -88,22 +113,19 @@ private:
 
     void LidarCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     {
-        dataPcl2 = localisation.filterPointCloud(*msg);
-        sensor_msgs::convertPointCloud2ToPointCloud(dataPcl2, dataPcl);
-        filteredPoints = localisation.convertPcl2toVector(dataPcl2);
-        clusterCentroids = localisation.clusterPointCloud(filteredPoints, 3, 1.0F);
-        lidarTriangles = localisation.findTriangles(clusterCentroids);
-        lidarUsableTriangles = localisation.findUsableTriangles(lidarTriangles);
-        trianglePairs = localisation.findTrianglePairs(mapTriangles, lidarUsableTriangles, 0.5F);
-        calcTriangles = localisation.getCalcTriangelsList(trianglePairs);
-        calcPosTriangles = localisation.getPosTriangelsList(calcTriangles);
-        calcPosition = localisation.getMeanPosition(calcPosTriangles, gazeboLidarPos);
+      //if localisation algorithm still running, don't overwrite data
+      if (localisationFinished == true)
+      {
+        dataPcl2 = *msg;
+        dataAvailable = true;
+      }
     }
 
     void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
     {
       gazeboLidarPos = localisation.getGazeboLidarPos(*msg);
 
+      //just check once for map triangles
       if (!gotMapTriangles)
       {
           mapReflectorList = localisation.getReflectorPositions(*msg);
@@ -111,14 +133,13 @@ private:
           mapTriangles = localisation.filterMapTriangles(mapTriangles, 180.0F);
           gotMapTriangles = true;
       }
-
     }
 
 };
 
 int main(int argc, char **argv)
 {
-    const float samplingTime = 100e-3F; // the constant sample time [ s ]
+    const float samplingTime = 10e-3F; // the constant sample time [ s ]
     ros::init(argc, argv, "localisation_node"); // initialize ROS
     LocalisationNode node(samplingTime);
     // define sampling rate as the inverse of the sample time

@@ -19,9 +19,14 @@ public:
   void step()
   {
     simTime = ros::Time::now() - begin; //calculate Simulation Time
-    outfile.open("eval.txt", std::ios_base::app); //open file
+    outfile.open(fName, std::ios_base::app); //open file
     outfile << simTime << ";" << actualPos.x << ";" << actualPos.y << ";" << calcPos.x << ";" << calcPos.y << ";" << deviation << "\n"; //safe data to file
     outfile.close();  //close file
+  }
+
+  void getFileName (std::string filename)
+  {
+    fName = filename + ".txt";
   }
 
 private:
@@ -43,6 +48,7 @@ private:
   ros::Time now;
   ros::Duration simTime;
 
+  std::string fName = "eval.txt";
 
   void calcPosCallback (const localisation_pkg::calcPosition::ConstPtr& msg)
   {
@@ -60,10 +66,14 @@ private:
 
 int main(int argc, char **argv)
 {
-    const float samplingTime = 100e-3F;
+    const float samplingTime = 10e-3F;
     ros::init(argc, argv, "eval_node");
     EvalNode node(samplingTime);
     ros::Rate loopRate(static_cast<double>(1.0F / samplingTime));
+    ros::NodeHandle nh2("~");
+    std::string filename;
+    nh2.getParam("filename", filename);
+    node.getFileName(filename);
     ROS_INFO("Data-Recording started.");
     while (ros::ok()) {
         node.step();
