@@ -334,6 +334,12 @@ public:
       return inputList;
     }
 
+    /**
+     * @brief filterMapTriangles used to filter Map triangles. Only triangles with longest side length < maxLength remain in vector.
+     * @param inputTriangles
+     * @param maxLength
+     * @return filtered Triangles
+     */
     localisation_pkg::trianglesList filterMapTriangles (localisation_pkg::trianglesList inputTriangles, float maxLength)
     {
       localisation_pkg::trianglesList filteredTriangles;
@@ -477,6 +483,13 @@ public:
 
     //-----------------------------match triangles--------------------------------//
 
+    /**
+     * @brief findMapCompareTriangles find map triangles that should be compared with lidar triangles (within radius of gnss-position of lidar)
+     * @param mapTriangles
+     * @param gnssPos
+     * @param th
+     * @return mapCompareTriangles
+     */
     localisation_pkg::trianglesList findMapCompareTriangles (localisation_pkg::trianglesList mapTriangles, geometry_msgs::Point32 gnssPos, float th)
     {
       localisation_pkg::trianglesList mapCompareTriangles;
@@ -495,6 +508,15 @@ public:
       return mapCompareTriangles;
     }
 
+
+    /**
+     * @brief triangleInCircle check wether triangle is in circle or not
+     * @param triangle
+     * @param centerX
+     * @param centerY
+     * @param r
+     * @return bool
+     */
     bool triangleInCircle (localisation_pkg::triangle triangle, float centerX, float centerY, float r)
     {
       unsigned int countInsidePoints = 0;
@@ -510,11 +532,19 @@ public:
       return countInsidePoints >= 3;
     }
 
+
+    /**
+     * @brief pointInCircle check wether point is in circle or not
+     * @param point
+     * @param centerX
+     * @param centerY
+     * @param r
+     * @return bool
+     */
     bool pointInCircle (geometry_msgs::Point32 point, float centerX, float centerY, float r)
     {
       return pow((point.x - centerX), 2) + pow((point.y - centerY), 2) <= pow(r, 2);
     }
-
 
 
     /**

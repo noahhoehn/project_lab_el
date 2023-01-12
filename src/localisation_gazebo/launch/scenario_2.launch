@@ -1,6 +1,0 @@
-<launch>
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find localisation_gazebo)/worlds/scenario_2.world"/>
-  </include>
-
-</launch>

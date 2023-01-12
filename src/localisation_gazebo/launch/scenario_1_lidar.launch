@@ -41,7 +41,7 @@
 
   <!-- Start rviz -->
   <arg name="rviz" default="true"/>
-  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find localisation_gazebo)/rviz/scenario_1.rviz" />
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find localisation_gazebo)/rviz/config.rviz" />
 
   <!-- Start rqt -->
   <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/>

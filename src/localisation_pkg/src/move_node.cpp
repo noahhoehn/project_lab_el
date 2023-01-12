@@ -27,7 +27,7 @@ public:
     }
   }
 
-  void initMove(int s)
+  void initMove(int s) //called once when starting node to set scenario given by argument "S"
   {
     scenario = s;
     int err = 0;
@@ -52,7 +52,6 @@ private:
 
   ros::Publisher move_pub;
 
-
   gazebo_msgs::ModelState lidar;
   geometry_msgs::Pose pose_lidar;
   geometry_msgs::Twist twist_lidar;
@@ -61,7 +60,7 @@ private:
 
   int scenario = 0;
 
-  int endPoint = 0;
+  bool endPoint = 0; //used to check wether endpoint of movement is reached
 
 };
 

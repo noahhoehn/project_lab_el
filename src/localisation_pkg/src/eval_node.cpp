@@ -12,6 +12,7 @@ public:
   EvalNode (const float samplingTimeArg):
     samplingTime(samplingTimeArg)
   {
+    //Subscriptions
     calcPositionSub = node.subscribe("/calcPosition", 1, &EvalNode::calcPosCallback, this);
     gazeboLidarPosSub = node.subscribe("/gazeboLidarPos", 1, &EvalNode::actualPosCallback, this);
   }
@@ -26,29 +27,29 @@ public:
 
   void getFileName (std::string filename)
   {
+    //safe filename given by argument or default falue
     fName = filename + ".txt";
   }
 
 private:
 
   ros::NodeHandle node { "~" }; /**< The ROS node handle. */
-
   const float samplingTime = 0.0F;
 
   ros::Subscriber calcPositionSub;
   ros::Subscriber gazeboLidarPosSub;
+
   geometry_msgs::Point32 actualPos;
   geometry_msgs::Point32 calcPos;
   localisation_pkg::calcPosition msgCalcPos;
   float deviation;
-
 
   std::ofstream outfile;
   ros::Time begin = ros::Time::now();
   ros::Time now;
   ros::Duration simTime;
 
-  std::string fName = "eval.txt";
+  std::string fName = "eval.txt"; //default file name
 
   void calcPosCallback (const localisation_pkg::calcPosition::ConstPtr& msg)
   {

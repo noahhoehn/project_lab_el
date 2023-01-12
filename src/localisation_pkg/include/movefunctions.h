@@ -94,7 +94,7 @@ public:
    * @param endPoint
    * @return lidar
    */
-  gazebo_msgs::ModelState moveLidar(gazebo_msgs::ModelState lidar, int scenario, const float samplingTime, int* endPoint)
+  gazebo_msgs::ModelState moveLidar(gazebo_msgs::ModelState lidar, int scenario, const float samplingTime, bool* endPoint)
   {
     switch (scenario)
     {
@@ -105,7 +105,7 @@ public:
         }
         else
         {
-          *endPoint = 1;
+          *endPoint = true;
         }
       break;
       case 2:
@@ -115,7 +115,7 @@ public:
         }
         else
         {
-          *endPoint = 1;
+          *endPoint = true;
         }
       break;
       case 3:
@@ -125,7 +125,7 @@ public:
         }
         else
         {
-          *endPoint = 1;
+          *endPoint = true;
         }
       break;
       case 4:
@@ -147,7 +147,7 @@ public:
         }
         else
         {
-          *endPoint = 1;
+          *endPoint = true;
         }
       break;
       case 5:
@@ -169,7 +169,7 @@ public:
         }
         else
         {
-          *endPoint = 1;
+          *endPoint = true;
         }
       break;
     }
@@ -211,11 +211,16 @@ public:
     return lidar;
   }
 
+  /**
+   * @brief getNorm get norm/length of vector
+   * @param compX
+   * @param compY
+   * @return norm
+   */
   float getNorm (float compX, float compY)
   {
     return sqrt(pow(compX,2)+pow(compY,2));
   }
-
 
 
   /**
@@ -265,8 +270,7 @@ public:
 
 private:
 
-  unsigned int phase = 0;
-
+  unsigned int phase = 0; //auxiliary variable for phase of movement
 
 };
 
